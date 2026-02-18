@@ -39,6 +39,14 @@ Persona-x/
 │   │   ├── inference/         # Ask-vs-infer decision logic
 │   │   │   └── inference.ts   # Inference engine with confidence
 │   │   └── engine.ts          # Main engine orchestrator
+│   ├── llm/                   # LLM integration (Anthropic SDK)
+│   │   ├── client.ts          # API client, retry logic, JSON extraction
+│   │   ├── discovery-llm.ts   # LLM-driven discovery questioning
+│   │   ├── population-llm.ts  # LLM-driven section population
+│   │   └── panel-llm.ts       # LLM-driven panel discussions
+│   ├── decision-engine/       # Opportunity evaluation pipeline
+│   │   ├── schema.ts          # Decision Engine Zod schemas
+│   │   └── pipeline.ts        # 4-stage pipeline (Propose → Challenge → Prototype → Execute)
 │   ├── cli/                   # Command-line interface
 │   │   ├── index.ts           # CLI entry point
 │   │   ├── create.ts          # CREATE command flow
@@ -51,11 +59,29 @@ Persona-x/
 │       ├── yaml.ts            # YAML serialisation/deserialisation
 │       └── version.ts         # Semantic versioning for personas
 ├── examples/                  # Example persona files
-│   └── risk-analyst.yaml      # Sample persona definition file
+│   ├── risk-analyst.yaml      # Sample persona definition file
+│   └── engine/                # Decision Engine evaluation personas
+│       ├── ethical-boundary-guardian.yaml
+│       ├── failure-archaeologist.yaml
+│       ├── opportunity-architect.yaml
+│       └── sceptical-investor.yaml
+├── website/                   # GitHub Pages site
+│   └── index.html             # Landing page
+├── scripts/                   # Utility scripts
+│   └── enable-pages.sh        # GitHub Pages setup
+├── docs/                      # Strategic documentation
+│   ├── EXECUTIVE-OVERVIEW.md  # Executive summary
+│   ├── GRC-USE-CASES.md       # Governance/risk/compliance use cases
+│   ├── PERSONAL-USE-CASES.md  # Personal use cases
+│   ├── SMALL-BUSINESS-USE-CASES.md  # Small business use cases
+│   ├── UNTAPPED-MARKETS.md    # High-strategy market categories
+│   ├── DECISION-ENGINE.md     # Meta-framework for prioritisation
+│   └── BUILD-PROMPT.md        # Build prompt for new sessions
 └── tests/                     # Test suites
     ├── schema/                # Schema validation tests
     ├── engine/                # Engine logic tests
-    ├── cli/                   # CLI integration tests
+    ├── llm/                   # LLM client tests
+    ├── decision-engine/       # Decision Engine tests
     └── runtime/               # Runtime tests
 ```
 
@@ -74,7 +100,7 @@ npm install
 | `npm run build` | Compile TypeScript to `dist/` |
 | `npm run dev` | Run CLI in development mode with ts-node |
 | `npm test` | Run all tests with Vitest |
-| `npm run test:watch` | Run tests in watch mode |
+| `npm run test:run` | Run tests once without watch mode |
 | `npm run lint` | Run ESLint |
 | `npm run format` | Run Prettier |
 | `npm run typecheck` | Run `tsc --noEmit` for type checking |

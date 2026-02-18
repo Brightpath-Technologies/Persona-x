@@ -30,11 +30,13 @@ The entire core framework is implemented in TypeScript with Zod schemas:
 | **Inference** | `src/engine/inference/inference.ts` | Ask vs Infer Rule — boundaries/purpose must be asked, others may infer when 2+ high-confidence signals converge |
 | **Rubric Scoring** | `src/engine/rubric/scorer.ts` | Translates discovery signals into rubric scores with confidence resolution |
 | **Engine** | `src/engine/engine.ts` | 4-phase orchestrator (discovery → population → review → complete) |
-| **CLI** | `src/cli/index.ts`, `create.ts`, `refine.ts` | 4 commands (create, refine, validate, panel). Interactive flows are stubbed — LLM integration not yet wired |
+| **CLI** | `src/cli/index.ts`, `create.ts`, `refine.ts` | 4 commands (create, refine, validate, panel). LLM-driven interactive flows wired via `src/llm/` |
 | **Panel Runtime** | `src/runtime/panel.ts`, `interface.ts`, `loader.ts` | Persona loading, system prompt generation, speaking order by intervention_frequency, contribution rules |
 | **Utilities** | `src/utils/yaml.ts`, `version.ts` | YAML serialisation with validation, semantic versioning with change-type inference |
 | **Exports** | `src/index.ts` | Library entry point — all public types, schemas, and functions |
-| **Tests** | `tests/schema/`, `tests/engine/`, `tests/runtime/` | 40 passing tests covering schema validation, discovery, pipeline, and panel runtime |
+| **LLM** | `src/llm/client.ts`, `discovery-llm.ts`, `population-llm.ts`, `panel-llm.ts` | Anthropic SDK integration with retry logic, JSON extraction, and LLM-driven discovery, population, and panel flows |
+| **Decision Engine** | `src/decision-engine/schema.ts`, `pipeline.ts` | 4-stage evaluation pipeline (Propose → Challenge → Prototype → Execute) with Zod schemas and gating logic |
+| **Tests** | `tests/schema/`, `tests/engine/`, `tests/llm/`, `tests/decision-engine/`, `tests/runtime/` | Test suites covering schema validation, discovery, pipeline, LLM client, decision engine, and panel runtime |
 | **Example** | `examples/risk-analyst.yaml` | Complete persona definition file demonstrating all sections |
 
 ### Strategic Documentation (Complete)
@@ -50,12 +52,10 @@ These documents define what to build and how to decide:
 | `docs/DECISION-ENGINE.md` | **The meta-framework** — 4-stage pipeline (Propose → Challenge → Prototype → Execute) with 16 purpose-built personas, quantified gating criteria, structured YAML output artefacts, kill/defer rules, and a 90-day feedback loop. This is how Persona-x decides what to build with Persona-x. |
 
 ### What Is NOT Built Yet
-1. **LLM Integration** — The CLI stubs interactive mode but does not call the Anthropic SDK. The `@anthropic-ai/sdk` dependency is installed but not wired into the create/refine flows.
-2. **Web Interface** — No web application exists. The framework is CLI-only.
-3. **Persona Library** — No registry or marketplace for pre-built personas.
-4. **Decision Engine Runtime** — `docs/DECISION-ENGINE.md` defines the pipeline conceptually but there is no code implementing the 4-stage evaluation flow.
-5. **Panel Discussion Persistence** — Panel sessions run in-memory. No storage, replay, or audit trail.
-6. **Derivative Solutions** — The 70 use cases across the four market documents are specifications, not products.
+1. **Web Interface** — No web application exists. The framework is CLI-only.
+2. **Persona Library** — No registry or marketplace for pre-built personas.
+3. **Panel Discussion Persistence** — Panel sessions run in-memory. No storage, replay, or audit trail.
+4. **Derivative Solutions** — The 70 use cases across the four market documents are specifications, not products.
 
 ## What to Build
 
@@ -63,28 +63,13 @@ Use `docs/DECISION-ENGINE.md` as the governing framework for prioritising work. 
 
 ### Immediate priorities (in suggested order):
 
-**1. Wire LLM Integration into the CLI**
-- Connect `@anthropic-ai/sdk` to `src/cli/create.ts` and `src/cli/refine.ts`
-- Use `src/runtime/interface.ts:generatePersonaSystemPrompt()` to build LLM prompts
-- Discovery questions should be asked by the LLM, signals extracted from responses
-- Population should use LLM to generate section content, validated against Zod schemas
-- Respect the inference engine rules — ask when required, infer only when signals converge
-- All LLM calls should retry with exponential backoff (3 attempts max, per CLAUDE.md)
-
-**2. Implement the Decision Engine as Code**
-- Turn `docs/DECISION-ENGINE.md` into executable TypeScript
-- The 16 engine personas should be loadable persona YAML files in `examples/engine/`
-- The 4-stage pipeline should be a state machine (following the pattern in `src/engine/engine.ts`)
-- Each stage should produce the structured YAML artefact defined in the doc
-- Gating logic should be codified and enforced
-
-**3. Build the First Derivative Solution**
+**1. Build the First Derivative Solution**
 - Pick the highest-scoring opportunity from the use case documents
 - Run it through the Decision Engine (Stage 1-4)
 - Build the prototype to the spec produced by Stage 3
 - This proves the engine works by using it
 
-**4. Panel Discussion Persistence**
+**2. Panel Discussion Persistence**
 - Store panel sessions as structured YAML or JSON
 - Include full audit trail: which persona said what, which rubric dimensions influenced each response
 - Enable replay and comparison across sessions
