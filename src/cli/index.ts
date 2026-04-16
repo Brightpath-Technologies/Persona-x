@@ -3,6 +3,7 @@
 import { Command } from "commander";
 import { createCommand } from "./create.js";
 import { refineCommand } from "./refine.js";
+import { registerFoodCommands } from "./food.js";
 
 /**
  * Persona-x CLI
@@ -116,5 +117,7 @@ program
       console.log(prompt.substring(0, 200) + "...");
     }
   });
+
+registerFoodCommands(program);
 
 program.parse();
