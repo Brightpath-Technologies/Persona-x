@@ -244,6 +244,89 @@ export function registerFoodCommands(program: Command): void {
     });
 
   food
+    .command("parse")
+    .description("Parse a natural language food description using AI (requires ANTHROPIC_API_KEY)")
+    .argument("<description...>", "Natural language food description")
+    .option("-m, --meal <meal>", "Override meal: breakfast, lunch, dinner, snack")
+    .option("--log", "Automatically log the parsed foods locally", false)
+    .action(
+      async (
+        descParts: string[],
+        opts: { meal?: string; log?: boolean },
+      ) => {
+        const description = descParts.join(" ");
+
+        if (!process.env["ANTHROPIC_API_KEY"]) {
+          console.error(chalk.red("Set ANTHROPIC_API_KEY environment variable to use AI parsing."));
+          process.exit(1);
+        }
+
+        console.log(chalk.dim(`Parsing: "${description}"...`));
+
+        try {
+          const { parseFood } = await import("../food-tracker/parser.js");
+          const result = await parseFood(description);
+
+          if (result.foods.length === 0) {
+            console.log(chalk.yellow("Couldn't identify any foods. Try being more specific."));
+            return;
+          }
+
+          const meal = (opts.meal as "breakfast" | "lunch" | "dinner" | "snack") ?? result.meal ?? "snack";
+          const date = result.date ?? todayDate();
+
+          console.log(chalk.green(`\nParsed ${result.foods.length} food(s):`));
+          if (result.meal) console.log(`  Meal: ${result.meal}`);
+          if (result.date) console.log(`  Date: ${result.date}`);
+          if (result.notes) console.log(`  Notes: ${result.notes}`);
+          console.log();
+
+          let totalCal = 0;
+
+          for (const food of result.foods) {
+            const cal = food.calories;
+            totalCal += cal;
+            console.log(`  ${chalk.cyan(food.name)} (${food.quantity} ${food.unit})`);
+            console.log(
+              `    ${cal} kcal | P:${food.protein_g}g C:${food.carbs_g}g F:${food.fat_g}g` +
+                (food.fibre_g ? ` Fibre:${food.fibre_g}g` : ""),
+            );
+
+            if (opts.log) {
+              logFood(
+                {
+                  id: `parsed-${Date.now()}`,
+                  name: food.name,
+                  source: "openfoodfacts",
+                  serving_size: `${food.quantity} ${food.unit}`,
+                  nutrition: {
+                    calories: food.calories,
+                    protein_g: food.protein_g,
+                    carbs_g: food.carbs_g,
+                    fat_g: food.fat_g,
+                    fibre_g: food.fibre_g,
+                  },
+                },
+                { servings: 1, meal, notes: result.notes ?? undefined },
+              );
+            }
+          }
+
+          console.log(chalk.bold(`\n  Total: ${totalCal} kcal`));
+
+          if (opts.log) {
+            console.log(chalk.green(`\nLogged ${result.foods.length} food(s) for ${meal} on ${date}.`));
+          } else {
+            console.log(chalk.dim("\nAdd --log to save these entries locally."));
+          }
+        } catch (err) {
+          console.error(chalk.red(`Parse failed: ${err instanceof Error ? err.message : String(err)}`));
+          process.exit(1);
+        }
+      },
+    );
+
+  food
     .command("path")
     .description("Show where food tracker data is stored")
     .action(() => {

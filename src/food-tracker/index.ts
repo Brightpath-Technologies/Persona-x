@@ -13,3 +13,4 @@ export {
   todayDate,
 } from "./tracker.js";
 export { loadData, getDataFilePath } from "./storage.js";
+export { parseFood, type ParsedFoodResult, type ParsedFoodItem } from "./parser.js";
