@@ -1,0 +1,659 @@
+diff --git a/src/App.jsx b/src/App.jsx
+index 9557025..c6ac04d 100644
+--- a/src/App.jsx
++++ b/src/App.jsx
+@@ -1,6 +1,7 @@
+ import { useState, useEffect, useCallback } from "react";
+ import { LineChart, BarChart, Bar, Line, XAxis, YAxis, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
+ import { supabase } from "./supabase.js";
++import FoodTab from "./FoodTab.jsx";
+ 
+ // ─── Constants ──────────────────────────────────────────────────────────────
+ const EMPTY_EXERCISE = { name: "", sets: "", reps: "", weight: "" };
+@@ -2002,6 +2003,7 @@ export default function App() {
+           ["workouts", "Workouts"],
+           ["weight",   "Weight & BMI"],
+           ["goals",    "Goals"],
++          ["food",     "Food"],
+           ["profile",  "Profile"],
+           ...(user.email === ADMIN_EMAIL ? [["admin", "Admin"]] : []),
+         ].map(([key, label]) => (
+@@ -2236,6 +2238,11 @@ export default function App() {
+             onPhotosChange={loadData} />
+         )}
+ 
++        {/* FOOD TAB */}
++        {tab === "food" && (
++          <FoodTab supabase={supabase} user={user} toast={msg => { setToast(msg); setTimeout(() => setToast(""), 2500); }} />
++        )}
++
+         {/* PROFILE TAB */}
+         {tab === "profile" && (
+           <ProfileTab user={user} profile={profile} onSave={p => setProfile(p)} onSignOut={signOut} />
+diff --git a/src/FoodTab.jsx b/src/FoodTab.jsx
+new file mode 100644
+index 0000000..322d0b3
+--- /dev/null
++++ b/src/FoodTab.jsx
+@@ -0,0 +1,447 @@
++/**
++ * FoodTab — React component for the Food Tracker tab.
++ *
++ * Drop this into the fitness dashboard's App.jsx as a sibling to the
++ * existing tab components (GoalsTab, ProfileTab, etc.).
++ *
++ * Required props:
++ *   supabase  — Supabase client instance
++ *   user      — current auth user object
++ *   toast     — function(message) to show a toast notification
++ *
++ * Database: reads/writes the `food_log` table (see migration).
++ * AI parse: calls the `parse-food` Supabase Edge Function.
++ */
++import React, { useState, useEffect, useCallback } from "react";
++
++/* ── Style constants (matching fitness dashboard) ───────────────── */
++const ACCENT = "#C8FF00";
++const BG = "#0e0e0e";
++const CARD_BG = "#181818";
++const BORDER = "#222";
++const DIM = "rgba(255,255,255,0.5)";
++
++const card = {
++  background: CARD_BG,
++  borderRadius: 12,
++  padding: 20,
++  marginBottom: 16,
++  border: `1px solid ${BORDER}`,
++};
++
++const btn = {
++  background: ACCENT,
++  color: BG,
++  border: "none",
++  borderRadius: 8,
++  padding: "10px 20px",
++  fontFamily: "'Barlow Condensed', sans-serif",
++  fontWeight: 700,
++  fontSize: 14,
++  letterSpacing: 1,
++  textTransform: "uppercase",
++  cursor: "pointer",
++};
++
++const btnDanger = {
++  ...btn,
++  background: "transparent",
++  color: "#ff4444",
++  border: "1px solid #ff4444",
++  padding: "6px 12px",
++  fontSize: 12,
++};
++
++const input = {
++  background: "#111",
++  color: "#fff",
++  border: `1px solid ${BORDER}`,
++  borderRadius: 8,
++  padding: "10px 14px",
++  fontFamily: "Georgia, serif",
++  fontSize: 15,
++  width: "100%",
++};
++
++const label = {
++  fontFamily: "'Barlow Condensed', sans-serif",
++  fontWeight: 600,
++  fontSize: 12,
++  letterSpacing: 2,
++  textTransform: "uppercase",
++  color: DIM,
++  marginBottom: 6,
++  display: "block",
++};
++
++/* ── Helpers ─────────────────────────────────────────────────────── */
++function todayStr() {
++  return new Date().toISOString().slice(0, 10);
++}
++
++function shortDate(d) {
++  return new Date(d + "T00:00:00").toLocaleDateString("en-AU", {
++    weekday: "short",
++    day: "numeric",
++    month: "short",
++  });
++}
++
++const MEALS = ["breakfast", "lunch", "dinner", "snack"];
++
++function mealEmoji(m) {
++  return { breakfast: "🌅", lunch: "☀️", dinner: "🌙", snack: "🍎" }[m] || "🍽️";
++}
++
++/* ── NutritionBar — compact macro bar ────────────────────────────── */
++function NutritionBar({ calories, protein_g, carbs_g, fat_g }) {
++  const total = protein_g + carbs_g + fat_g || 1;
++  return (
++    <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
++      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: 22, color: ACCENT }}>
++        {Math.round(calories)} kcal
++      </span>
++      <div style={{ display: "flex", gap: 4, flex: 1, minWidth: 120, height: 6, borderRadius: 3, overflow: "hidden" }}>
++        <div style={{ width: `${(protein_g / total) * 100}%`, background: "#4dabf7", borderRadius: 3 }} />
++        <div style={{ width: `${(carbs_g / total) * 100}%`, background: "#ffd43b", borderRadius: 3 }} />
++        <div style={{ width: `${(fat_g / total) * 100}%`, background: "#ff6b6b", borderRadius: 3 }} />
++      </div>
++      <div style={{ display: "flex", gap: 12, fontSize: 13, color: DIM, fontFamily: "'Barlow Condensed', sans-serif" }}>
++        <span><span style={{ color: "#4dabf7" }}>●</span> P {Math.round(protein_g)}g</span>
++        <span><span style={{ color: "#ffd43b" }}>●</span> C {Math.round(carbs_g)}g</span>
++        <span><span style={{ color: "#ff6b6b" }}>●</span> F {Math.round(fat_g)}g</span>
++      </div>
++    </div>
++  );
++}
++
++/* ── Main component ──────────────────────────────────────────────── */
++export default function FoodTab({ supabase, user, toast }) {
++  const [entries, setEntries] = useState([]);
++  const [loading, setLoading] = useState(true);
++  const [selectedDate, setSelectedDate] = useState(todayStr());
++  const [nlInput, setNlInput] = useState("");
++  const [parsing, setParsing] = useState(false);
++  const [showHistory, setShowHistory] = useState(false);
++  const [historyDays, setHistoryDays] = useState([]);
++  const [historyLoading, setHistoryLoading] = useState(false);
++
++  /* ── Load entries for selected date ───────────────────────────── */
++  const loadEntries = useCallback(async () => {
++    setLoading(true);
++    const { data, error } = await supabase
++      .from("food_log")
++      .select("*")
++      .eq("date", selectedDate)
++      .order("created_at", { ascending: true });
++
++    if (error) {
++      console.error("food_log load error:", error);
++      toast?.("Failed to load food log.");
++    }
++    setEntries(data || []);
++    setLoading(false);
++  }, [supabase, selectedDate, toast]);
++
++  useEffect(() => {
++    loadEntries();
++  }, [loadEntries]);
++
++  /* ── Daily totals ─────────────────────────────────────────────── */
++  const totals = entries.reduce(
++    (acc, e) => ({
++      calories: acc.calories + Number(e.calories),
++      protein_g: acc.protein_g + Number(e.protein_g),
++      carbs_g: acc.carbs_g + Number(e.carbs_g),
++      fat_g: acc.fat_g + Number(e.fat_g),
++      fibre_g: acc.fibre_g + Number(e.fibre_g || 0),
++    }),
++    { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fibre_g: 0 },
++  );
++
++  /* ── NL parse via Edge Function ───────────────────────────────── */
++  async function handleParse() {
++    if (!nlInput.trim()) return;
++    setParsing(true);
++    try {
++      const { data, error } = await supabase.functions.invoke("parse-food", {
++        body: { description: nlInput.trim(), today: todayStr() },
++      });
++      if (error) throw error;
++
++      const foods = data.foods || [];
++      if (foods.length === 0) {
++        toast?.("Couldn't identify any foods. Try being more specific.");
++        setParsing(false);
++        return;
++      }
++
++      const meal = data.meal || "snack";
++      const date = data.date || selectedDate;
++
++      const rows = foods.map((f) => ({
++        user_id: user.id,
++        date,
++        meal,
++        name: f.name,
++        quantity: parseFloat(f.quantity) || 1,
++        unit: f.unit || "serving",
++        calories: f.calories || 0,
++        protein_g: f.protein_g || 0,
++        carbs_g: f.carbs_g || 0,
++        fat_g: f.fat_g || 0,
++        fibre_g: f.fibre_g || 0,
++        notes: data.notes || null,
++      }));
++
++      const { error: insertErr } = await supabase.from("food_log").insert(rows);
++      if (insertErr) throw insertErr;
++
++      toast?.(`Logged ${foods.length} food(s) for ${meal}.`);
++      setNlInput("");
++      if (date === selectedDate) loadEntries();
++      else setSelectedDate(date);
++    } catch (err) {
++      console.error("parse-food error:", err);
++      toast?.("AI parse failed — " + (err.message || "try again."));
++    }
++    setParsing(false);
++  }
++
++  /* ── Delete entry ─────────────────────────────────────────────── */
++  async function handleDelete(id) {
++    const { error } = await supabase.from("food_log").delete().eq("id", id);
++    if (error) {
++      toast?.("Failed to delete entry.");
++      return;
++    }
++    setEntries((prev) => prev.filter((e) => e.id !== id));
++    toast?.("Entry removed.");
++  }
++
++  /* ── Load history (last 14 days) ──────────────────────────────── */
++  async function loadHistory() {
++    setHistoryLoading(true);
++    const since = new Date();
++    since.setDate(since.getDate() - 13);
++    const sinceStr = since.toISOString().slice(0, 10);
++
++    const { data, error } = await supabase
++      .from("food_log")
++      .select("date, calories, protein_g, carbs_g, fat_g")
++      .gte("date", sinceStr)
++      .order("date", { ascending: true });
++
++    if (error) {
++      toast?.("Failed to load history.");
++      setHistoryLoading(false);
++      return;
++    }
++
++    // Group by date
++    const byDate = {};
++    (data || []).forEach((r) => {
++      if (!byDate[r.date]) byDate[r.date] = { date: r.date, calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, count: 0 };
++      byDate[r.date].calories += Number(r.calories);
++      byDate[r.date].protein_g += Number(r.protein_g);
++      byDate[r.date].carbs_g += Number(r.carbs_g);
++      byDate[r.date].fat_g += Number(r.fat_g);
++      byDate[r.date].count += 1;
++    });
++
++    setHistoryDays(Object.values(byDate));
++    setHistoryLoading(false);
++    setShowHistory(true);
++  }
++
++  /* ── Date navigation ──────────────────────────────────────────── */
++  function shiftDate(delta) {
++    const d = new Date(selectedDate + "T00:00:00");
++    d.setDate(d.getDate() + delta);
++    setSelectedDate(d.toISOString().slice(0, 10));
++  }
++
++  /* ── Render ────────────────────────────────────────────────────── */
++  return (
++    <div style={{ maxWidth: 600, margin: "0 auto" }}>
++      {/* ── Natural language input ──────────────────────────────── */}
++      <div style={card}>
++        <div style={label}>Log food with AI</div>
++        <textarea
++          style={{ ...input, minHeight: 60, resize: "vertical", marginBottom: 10 }}
++          placeholder='e.g. "2 eggs and toast with peanut butter for breakfast" or "chicken stir fry with rice for dinner"'
++          value={nlInput}
++          onChange={(e) => setNlInput(e.target.value)}
++          onKeyDown={(e) => {
++            if (e.key === "Enter" && !e.shiftKey) {
++              e.preventDefault();
++              handleParse();
++            }
++          }}
++        />
++        <button style={{ ...btn, opacity: parsing ? 0.6 : 1 }} onClick={handleParse} disabled={parsing}>
++          {parsing ? "Parsing…" : "Log Food"}
++        </button>
++      </div>
++
++      {/* ── Date selector ───────────────────────────────────────── */}
++      <div
++        style={{
++          display: "flex",
++          alignItems: "center",
++          justifyContent: "center",
++          gap: 16,
++          marginBottom: 16,
++          fontFamily: "'Barlow Condensed', sans-serif",
++        }}
++      >
++        <button onClick={() => shiftDate(-1)} style={{ ...btn, padding: "6px 14px" }}>
++          ◀
++        </button>
++        <span style={{ fontWeight: 700, fontSize: 18, letterSpacing: 1 }}>
++          {selectedDate === todayStr() ? "Today" : shortDate(selectedDate)}
++        </span>
++        <button
++          onClick={() => shiftDate(1)}
++          style={{ ...btn, padding: "6px 14px", opacity: selectedDate >= todayStr() ? 0.3 : 1 }}
++          disabled={selectedDate >= todayStr()}
++        >
++          ▶
++        </button>
++      </div>
++
++      {/* ── Daily totals ────────────────────────────────────────── */}
++      {entries.length > 0 && (
++        <div style={{ ...card, borderLeft: `3px solid ${ACCENT}` }}>
++          <div style={{ ...label, marginBottom: 10 }}>Daily Totals</div>
++          <NutritionBar {...totals} />
++          {totals.fibre_g > 0 && (
++            <div style={{ fontSize: 13, color: DIM, marginTop: 6, fontFamily: "'Barlow Condensed', sans-serif" }}>
++              Fibre: {Math.round(totals.fibre_g)}g
++            </div>
++          )}
++        </div>
++      )}
++
++      {/* ── Entries by meal ─────────────────────────────────────── */}
++      {loading ? (
++        <div style={{ textAlign: "center", color: DIM, padding: 40 }}>Loading…</div>
++      ) : entries.length === 0 ? (
++        <div style={{ textAlign: "center", color: DIM, padding: 40 }}>
++          No food logged for {selectedDate === todayStr() ? "today" : shortDate(selectedDate)}.
++          <br />
++          <span style={{ fontSize: 13 }}>Type what you ate above and hit Log Food.</span>
++        </div>
++      ) : (
++        MEALS.map((meal) => {
++          const mealEntries = entries.filter((e) => e.meal === meal);
++          if (mealEntries.length === 0) return null;
++          return (
++            <div key={meal} style={{ marginBottom: 20 }}>
++              <div
++                style={{
++                  fontFamily: "'Barlow Condensed', sans-serif",
++                  fontWeight: 700,
++                  fontSize: 14,
++                  letterSpacing: 2,
++                  textTransform: "uppercase",
++                  color: DIM,
++                  marginBottom: 8,
++                }}
++              >
++                {mealEmoji(meal)} {meal}
++              </div>
++              {mealEntries.map((entry) => (
++                <div
++                  key={entry.id}
++                  style={{
++                    ...card,
++                    display: "flex",
++                    alignItems: "flex-start",
++                    justifyContent: "space-between",
++                    gap: 12,
++                    padding: 14,
++                    marginBottom: 8,
++                  }}
++                >
++                  <div style={{ flex: 1 }}>
++                    <div style={{ fontWeight: 600, marginBottom: 4 }}>
++                      {entry.name}
++                      <span style={{ color: DIM, fontWeight: 400, fontSize: 14, marginLeft: 8 }}>
++                        {entry.quantity} {entry.unit}
++                      </span>
++                    </div>
++                    <div
++                      style={{
++                        display: "flex",
++                        gap: 12,
++                        fontSize: 13,
++                        color: DIM,
++                        fontFamily: "'Barlow Condensed', sans-serif",
++                      }}
++                    >
++                      <span style={{ color: ACCENT }}>{entry.calories} kcal</span>
++                      <span>P:{Math.round(Number(entry.protein_g))}g</span>
++                      <span>C:{Math.round(Number(entry.carbs_g))}g</span>
++                      <span>F:{Math.round(Number(entry.fat_g))}g</span>
++                    </div>
++                    {entry.notes && (
++                      <div style={{ fontSize: 12, color: DIM, marginTop: 4, fontStyle: "italic" }}>
++                        {entry.notes}
++                      </div>
++                    )}
++                  </div>
++                  <button style={btnDanger} onClick={() => handleDelete(entry.id)} title="Delete entry">
++                    ✕
++                  </button>
++                </div>
++              ))}
++            </div>
++          );
++        })
++      )}
++
++      {/* ── History toggle ──────────────────────────────────────── */}
++      <div style={{ textAlign: "center", marginTop: 8, marginBottom: 24 }}>
++        <button
++          style={{ ...btn, background: "transparent", color: ACCENT, border: `1px solid ${ACCENT}` }}
++          onClick={() => (showHistory ? setShowHistory(false) : loadHistory())}
++        >
++          {showHistory ? "Hide History" : historyLoading ? "Loading…" : "Show 14-Day History"}
++        </button>
++      </div>
++
++      {/* ── History view ────────────────────────────────────────── */}
++      {showHistory && historyDays.length > 0 && (
++        <div style={card}>
++          <div style={{ ...label, marginBottom: 12 }}>14-Day Overview</div>
++          {historyDays.map((day) => (
++            <div
++              key={day.date}
++              onClick={() => {
++                setSelectedDate(day.date);
++                setShowHistory(false);
++              }}
++              style={{
++                display: "flex",
++                justifyContent: "space-between",
++                alignItems: "center",
++                padding: "10px 0",
++                borderBottom: `1px solid ${BORDER}`,
++                cursor: "pointer",
++              }}
++            >
++              <div>
++                <span style={{ fontWeight: 600 }}>{shortDate(day.date)}</span>
++                <span style={{ color: DIM, fontSize: 13, marginLeft: 8 }}>{day.count} items</span>
++              </div>
++              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, color: ACCENT }}>
++                {Math.round(day.calories)} kcal
++              </div>
++            </div>
++          ))}
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/supabase/functions/parse-food/index.ts b/supabase/functions/parse-food/index.ts
+new file mode 100644
+index 0000000..bbbe5c7
+--- /dev/null
++++ b/supabase/functions/parse-food/index.ts
+@@ -0,0 +1,117 @@
++import Anthropic from "npm:@anthropic-ai/sdk@^0.39.0";
++
++const corsHeaders = {
++  "Access-Control-Allow-Origin": "*",
++  "Access-Control-Allow-Headers":
++    "authorization, x-client-info, apikey, content-type",
++};
++
++Deno.serve(async (req) => {
++  if (req.method === "OPTIONS") {
++    return new Response("ok", { headers: corsHeaders });
++  }
++
++  try {
++    const { description, image_base64, image_media_type, today } =
++      await req.json();
++
++    if (!description && !image_base64) {
++      return new Response(
++        JSON.stringify({ error: "Provide a description or image." }),
++        {
++          status: 400,
++          headers: { ...corsHeaders, "Content-Type": "application/json" },
++        },
++      );
++    }
++
++    const client = new Anthropic();
++
++    const content: Anthropic.MessageParam["content"] = [];
++
++    if (image_base64) {
++      content.push({
++        type: "image",
++        source: {
++          type: "base64",
++          media_type: (image_media_type ||
++            "image/jpeg") as Anthropic.Base64ImageSource["media_type"],
++          data: image_base64,
++        },
++      });
++    }
++
++    content.push({
++      type: "text",
++      text:
++        (today ? `Today's date is ${today}.\n\n` : "") +
++        (description || "Extract all food items from this image."),
++    });
++
++    const response = await client.messages.create({
++      model: "claude-haiku-4-5-20251001",
++      max_tokens: 2048,
++      system: `You are a food log parser. Extract food items and nutrition from the user's text or image.
++Return ONLY valid JSON — no markdown, no explanation:
++{
++  "foods": [
++    {
++      "name": "Food Name",
++      "quantity": "2",
++      "unit": "eggs",
++      "calories": 140,
++      "protein_g": 12,
++      "carbs_g": 1,
++      "fat_g": 10,
++      "fibre_g": 0
++    }
++  ],
++  "meal": "breakfast | lunch | dinner | snack | null",
++  "date": "YYYY-MM-DD or null",
++  "notes": "any extra context or null"
++}
++CRITICAL RULES — read carefully:
++- Create ONE entry per distinct food item.
++  Example: "2 eggs and toast with butter" → 3 entries (eggs, toast, butter)
++  Example: "chicken caesar salad" → 1 entry (treat as a single dish)
++- quantity is a numeric string ("2", "1.5", "1")
++- unit is a short descriptor ("eggs", "slice", "cup", "g", "ml", "serving", "bowl", "piece")
++- Estimate realistic nutrition values per the TOTAL quantity described (not per unit).
++  Example: "2 eggs" → calories for 2 eggs (~140), not 1 egg.
++- If the user says something vague like "a sandwich", estimate reasonable average values.
++- Use metric units internally (grams, ml) but accept any input format.
++- meal: infer from context or time cues. If the user says "for breakfast" → "breakfast". If ambiguous → null.
++- date: if mentioned (today, yesterday, a weekday, or explicit date), convert to YYYY-MM-DD using today's date as reference. Otherwise null.
++- notes: capture anything that doesn't fit the structured fields (e.g. "at the café", "homemade").
++- Round all nutrition numbers to integers.
++- Be conservative with estimates — prefer underestimating slightly rather than overestimating.
++- If you truly cannot identify a food item, include it with name "Unknown" and zero nutrition.`,
++      messages: [{ role: "user", content }],
++    });
++
++    const text =
++      response.content[0].type === "text" ? response.content[0].text : "";
++
++    // Strip markdown code fences if present
++    const jsonStr = text
++      .replace(/```(?:json)?\s*/g, "")
++      .replace(/```/g, "")
++      .trim();
++    const result = JSON.parse(jsonStr);
++
++    return new Response(JSON.stringify(result), {
++      headers: { ...corsHeaders, "Content-Type": "application/json" },
++    });
++  } catch (err) {
++    console.error(err);
++    return new Response(
++      JSON.stringify({
++        error: err instanceof Error ? err.message : "Parse failed.",
++      }),
++      {
++        status: 500,
++        headers: { ...corsHeaders, "Content-Type": "application/json" },
++      },
++    );
++  }
++});
+diff --git a/supabase/migrations/20260416_create_food_log.sql b/supabase/migrations/20260416_create_food_log.sql
+new file mode 100644
+index 0000000..33e08fb
+--- /dev/null
++++ b/supabase/migrations/20260416_create_food_log.sql
+@@ -0,0 +1,45 @@
++-- Food log table for the food tracker
++-- Follows the same RLS pattern as workout_sessions and weight_log
++
++create table if not exists food_log (
++  id          bigint generated always as identity primary key,
++  user_id     uuid references auth.users(id) on delete cascade not null default auth.uid(),
++  date        date not null default current_date,
++  meal        text check (meal in ('breakfast', 'lunch', 'dinner', 'snack')) default 'snack',
++  name        text not null,
++  quantity    numeric(6,2) not null default 1,
++  unit        text not null default 'serving',
++  calories    integer not null default 0,
++  protein_g   numeric(6,1) not null default 0,
++  carbs_g     numeric(6,1) not null default 0,
++  fat_g       numeric(6,1) not null default 0,
++  fibre_g     numeric(6,1) default 0,
++  notes       text,
++  created_at  timestamptz not null default now()
++);
++
++-- Enable RLS
++alter table food_log enable row level security;
++
++-- Users can only see their own entries
++create policy "Users can view own food_log"
++  on food_log for select
++  using (auth.uid() = user_id);
++
++-- Users can insert their own entries
++create policy "Users can insert own food_log"
++  on food_log for insert
++  with check (auth.uid() = user_id);
++
++-- Users can update their own entries
++create policy "Users can update own food_log"
++  on food_log for update
++  using (auth.uid() = user_id);
++
++-- Users can delete their own entries
++create policy "Users can delete own food_log"
++  on food_log for delete
++  using (auth.uid() = user_id);
++
++-- Index for fast daily lookups
++create index if not exists food_log_user_date_idx on food_log (user_id, date desc);
