@@ -181,10 +181,31 @@ export const ProvenanceEntrySchema = z.object({
   changes: z.array(z.string()).min(1),
 });
 
+export const SectionGenerationRecordSchema = z.object({
+  section: z.string().describe("Population section name"),
+  provider: z
+    .string()
+    .describe("LLM provider that generated this section (or 'human' for direct input)"),
+  model: z.string().describe("Model identifier used"),
+  timestamp: z.string().describe("ISO 8601 timestamp"),
+  method: z
+    .enum(["direct_input", "structured_choice", "scenario_based", "inference"])
+    .describe("How this section was populated"),
+  confidence: z.enum(["high", "medium", "low"]),
+});
+
+export type SectionGenerationRecord = z.infer<
+  typeof SectionGenerationRecordSchema
+>;
+
 export const ProvenanceSchema = z
   .object({
     created_by: z.string().describe("Tool or process that created this file"),
     history: z.array(ProvenanceEntrySchema).optional(),
+    section_generation: z
+      .array(SectionGenerationRecordSchema)
+      .optional()
+      .describe("Per-section record of which LLM generated what"),
   })
   .optional();
 

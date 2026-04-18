@@ -33,7 +33,10 @@ export type {
   Boundaries,
   InvocationCues,
   Provenance,
+  SectionGenerationRecord,
 } from "./schema/persona.js";
+
+export { SectionGenerationRecordSchema } from "./schema/persona.js";
 
 export {
   RubricProfileSchema,
@@ -97,6 +100,9 @@ export {
   advanceSection,
   isPipelineComplete,
   generateBuildTrace,
+  recordPopulation,
+  shouldAskUser,
+  buildSectionGenerationProvenance,
 } from "./engine/population/pipeline.js";
 
 export type {
