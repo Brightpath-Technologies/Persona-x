@@ -72,49 +72,100 @@ program
   .argument("<files...>", "Paths to persona YAML files")
   .option("-t, --topic <topic>", "Discussion topic", "General review")
   .option("-r, --rounds <number>", "Number of discussion rounds", "3")
-  .action(async (files: string[], options: { topic: string; rounds: string }) => {
-    const { loadPersonasForPanel } = await import("../runtime/loader.js");
-    const { createPanelSession, determineSpeakingOrder } = await import(
-      "../runtime/panel.js"
-    );
-
-    const result = await loadPersonasForPanel(files);
-
-    if (result.personas.length === 0) {
-      console.error("No valid personas loaded.");
-      for (const [path, errors] of Object.entries(result.errors)) {
-        console.error(`  ${path}:`);
-        for (const err of errors) {
-          console.error(`    - ${err}`);
-        }
+  .option(
+    "--dry-run",
+    "Load personas and print system prompts without calling the LLM"
+  )
+  .option(
+    "-o, --output <path>",
+    "Write the transcript to this Markdown file"
+  )
+  .action(
+    async (
+      files: string[],
+      options: {
+        topic: string;
+        rounds: string;
+        dryRun?: boolean;
+        output?: string;
       }
-      process.exit(1);
+    ) => {
+      const { loadPersonasForPanel } = await import("../runtime/loader.js");
+      const {
+        createPanelSession,
+        determineSpeakingOrder,
+        runPanel,
+        formatPanelDiscussion,
+      } = await import("../runtime/panel.js");
+      const { createClient } = await import("../llm/client.js");
+
+      const result = await loadPersonasForPanel(files);
+
+      if (result.personas.length === 0) {
+        console.error("No valid personas loaded.");
+        for (const [path, errors] of Object.entries(result.errors)) {
+          console.error(`  ${path}:`);
+          for (const err of errors) {
+            console.error(`    - ${err}`);
+          }
+        }
+        process.exit(1);
+      }
+
+      console.log(
+        `Loaded ${result.personas.length} persona(s): ${result.personas.map((p) => p.file.metadata.name).join(", ")}`
+      );
+
+      const session = createPanelSession({
+        topic: options.topic,
+        context: "Panel simulation via Persona-x CLI",
+        personas: result.personas,
+        max_rounds: parseInt(options.rounds, 10),
+        moderation: "light",
+      });
+
+      const order = determineSpeakingOrder(result.personas);
+      console.log(
+        `\nSpeaking order (by intervention frequency): ${order.map((p) => p.file.metadata.name).join(" → ")}`
+      );
+
+      if (options.dryRun) {
+        console.log("\nDry-run mode: system prompts only, no LLM calls.");
+        for (const [id, prompt] of session.system_prompts) {
+          console.log(`\n--- ${id} ---`);
+          console.log(prompt.substring(0, 300) + "...");
+        }
+        return;
+      }
+
+      let client;
+      try {
+        client = createClient();
+        console.log(
+          `Using provider: ${client.name} (model: ${client.model})`
+        );
+      } catch (err) {
+        console.error("Failed to initialise LLM provider.");
+        console.error(err instanceof Error ? err.message : String(err));
+        console.error(
+          "Set PERSONA_X_PROVIDER (ollama | anthropic | openai-compatible) or use --dry-run."
+        );
+        process.exit(1);
+      }
+
+      console.log("\nRunning panel…");
+      await runPanel(client, session);
+
+      const transcript = formatPanelDiscussion(session);
+
+      if (options.output) {
+        const { writeFile } = await import("node:fs/promises");
+        await writeFile(options.output, transcript, "utf-8");
+        console.log(`\nTranscript written to ${options.output}`);
+      } else {
+        console.log("\n" + transcript);
+      }
     }
-
-    console.log(
-      `Loaded ${result.personas.length} persona(s): ${result.personas.map((p) => p.file.metadata.name).join(", ")}`
-    );
-
-    const session = createPanelSession({
-      topic: options.topic,
-      context: "Panel simulation via Persona-x CLI",
-      personas: result.personas,
-      max_rounds: parseInt(options.rounds, 10),
-      moderation: "light",
-    });
-
-    const order = determineSpeakingOrder(result.personas);
-    console.log(
-      `\nSpeaking order (by intervention frequency): ${order.map((p) => p.file.metadata.name).join(" → ")}`
-    );
-    console.log(
-      "\nPanel session initialised. In a full implementation, this would drive LLM responses for each persona."
-    );
-    console.log("\nSystem prompts generated for each persona:");
-    for (const [id, prompt] of session.system_prompts) {
-      console.log(`\n--- ${id} ---`);
-      console.log(prompt.substring(0, 200) + "...");
-    }
-  });
+  );
 
 program.parse();

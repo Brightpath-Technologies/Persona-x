@@ -24,6 +24,7 @@
     "create": "tsx src/cli/index.ts create",
     "refine": "tsx src/cli/index.ts refine",
     "validate": "tsx src/cli/index.ts validate",
+    "panel": "tsx src/cli/index.ts panel",
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "eslint src/ tests/",
