@@ -24,7 +24,8 @@ import { createInterface } from "node:readline/promises";
  *
  * Guided persona creation from scratch.
  * Interactive mode drives the full discovery → population → review pipeline
- * using the Anthropic SDK. Non-interactive mode generates an example persona.
+ * through the configured LLM provider. Non-interactive mode generates an
+ * example persona without any provider call.
  */
 
 interface CreateOptions {
@@ -53,10 +54,18 @@ async function createInteractive(outputPath: string): Promise<void> {
 
   try {
     client = createClient();
-  } catch {
-    console.error("Failed to initialise Anthropic client.");
-    console.error("Ensure ANTHROPIC_API_KEY is set in your environment.");
-    console.error("Use --non-interactive to generate an example persona without an API key.\n");
+    console.log(
+      `Using provider: ${client.name} (model: ${client.model})\n`
+    );
+  } catch (err) {
+    console.error("Failed to initialise LLM provider.");
+    console.error(err instanceof Error ? err.message : String(err));
+    console.error(
+      "Set PERSONA_X_PROVIDER (ollama | anthropic | openai-compatible) and the relevant credentials."
+    );
+    console.error(
+      "Use --non-interactive to generate an example persona without any provider.\n"
+    );
     rl.close();
     return;
   }

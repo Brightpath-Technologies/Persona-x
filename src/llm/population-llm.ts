@@ -1,4 +1,4 @@
-import type Anthropic from "@anthropic-ai/sdk";
+import type { LLMClient } from "./client.js";
 import { sendMessageForJSON } from "./client.js";
 import type { PipelineState, PopulationSection } from "../engine/population/pipeline.js";
 import type {
@@ -27,7 +27,7 @@ import { RubricProfileSchema, RUBRIC_DIMENSION_LABELS } from "../schema/rubric.j
 /**
  * LLM-Powered Population
  *
- * Uses the Anthropic SDK to generate persona file sections
+ * Uses the configured LLM provider to generate persona file sections
  * from discovery signals. Each section is validated against
  * its Zod schema before being accepted.
  */
@@ -48,7 +48,7 @@ Do not include any text outside the JSON object.`;
  * Generate a persona section using LLM, validated against the appropriate schema.
  */
 export async function generateSection(
-  client: Anthropic,
+  client: LLMClient,
   section: PopulationSection,
   state: PipelineState,
   userInput?: string
@@ -74,7 +74,7 @@ export async function generateSection(
 }
 
 async function generatePurpose(
-  client: Anthropic,
+  client: LLMClient,
   state: PipelineState,
   userInput?: string
 ): Promise<PersonaPurpose> {
@@ -109,7 +109,7 @@ Respond with a JSON object matching this structure.`,
 }
 
 async function generatePanelRole(
-  client: Anthropic,
+  client: LLMClient,
   state: PipelineState,
   userInput?: string
 ): Promise<PanelRole> {
@@ -147,7 +147,7 @@ Respond with a JSON object matching this structure.`,
 }
 
 async function generateRubric(
-  client: Anthropic,
+  client: LLMClient,
   state: PipelineState,
   userInput?: string
 ): Promise<RubricProfile> {
@@ -202,7 +202,7 @@ Respond with a JSON object with all six dimensions.`,
 }
 
 async function generateReasoning(
-  client: Anthropic,
+  client: LLMClient,
   state: PipelineState
 ): Promise<ReasoningTendencies> {
   const signalSummary = formatSignalSummary(state);
@@ -239,7 +239,7 @@ Respond with a JSON object matching this structure.`,
 }
 
 async function generateInteraction(
-  client: Anthropic,
+  client: LLMClient,
   state: PipelineState
 ): Promise<InteractionStyle> {
   const signalSummary = formatSignalSummary(state);
@@ -276,7 +276,7 @@ Respond with a JSON object matching this structure.`,
 }
 
 async function generateBoundaries(
-  client: Anthropic,
+  client: LLMClient,
   state: PipelineState,
   userInput?: string
 ): Promise<Boundaries> {
@@ -314,7 +314,7 @@ Respond with a JSON object matching this structure.`,
 }
 
 async function generateOptionalSections(
-  client: Anthropic,
+  client: LLMClient,
   state: PipelineState
 ): Promise<{
   communication?: CommunicationStyle;

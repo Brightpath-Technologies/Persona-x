@@ -151,9 +151,19 @@ export {
   createClient,
   sendMessage,
   sendMessageForJSON,
+  OfflineViolationError,
+  ProviderRequestError,
 } from "./llm/client.js";
 
-export type { LLMResponse, LLMMessage, LLMRequestOptions } from "./llm/client.js";
+export type {
+  LLMClient,
+  LLMResponse,
+  LLMMessage,
+  LLMRequestOptions,
+  ProviderName,
+} from "./llm/client.js";
+
+export { isOfflineMode } from "./llm/providers/guard.js";
 
 export {
   extractSignals,

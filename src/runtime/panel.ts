@@ -8,10 +8,9 @@ import { generatePersonaSystemPrompt } from "./interface.js";
 /**
  * Panel Simulator
  *
- * A lightweight panel runtime that demonstrates how persona files
- * drive multi-agent discussions. In production, this would integrate
- * with the Anthropic SDK to generate actual LLM responses shaped
- * by each persona's rubric and behaviour profile.
+ * A lightweight panel runtime that drives persona files through
+ * a multi-agent discussion. Responses are produced by the configured
+ * LLM provider; round and session orchestration lives here.
  *
  * For the prototype, this provides:
  * - Persona selection based on topic

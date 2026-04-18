@@ -1,93 +1,98 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { createAnthropicProvider } from "./providers/anthropic.js";
+import { createOllamaProvider } from "./providers/ollama.js";
+import { createOpenAICompatibleProvider } from "./providers/openai-compatible.js";
+import {
+  ProviderRequestError,
+  type LLMProvider,
+  type LLMRequestOptions,
+  type LLMResponse,
+  type ProviderName,
+} from "./providers/types.js";
 
 /**
- * LLM Client
+ * LLM Client — provider-agnostic entry point.
  *
- * Wraps the Anthropic SDK with retry logic and structured response handling.
- * All LLM calls in Persona-x go through this module.
+ * Every LLM call in Persona-x goes through this factory. The concrete
+ * provider is chosen by PERSONA_X_PROVIDER (default: ollama) — this keeps
+ * the trust boundary explicit and lets consumers pick local-only operation
+ * without touching call sites.
  *
- * Retry policy: exponential backoff, 3 attempts max (per CLAUDE.md).
+ * Retry policy lives here so every provider benefits equally.
  */
 
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000;
 
-export interface LLMResponse {
-  content: string;
-  usage: {
-    input_tokens: number;
-    output_tokens: number;
-  };
-}
+export type LLMClient = LLMProvider;
 
-export interface LLMMessage {
-  role: "user" | "assistant";
-  content: string;
-}
+export type {
+  LLMResponse,
+  LLMMessage,
+  LLMRequestOptions,
+  ProviderName,
+} from "./providers/types.js";
 
-export interface LLMRequestOptions {
-  system?: string;
-  messages: LLMMessage[];
-  maxTokens?: number;
-  temperature?: number;
+export { OfflineViolationError, ProviderRequestError } from "./providers/types.js";
+
+export interface CreateClientOptions {
+  provider?: ProviderName;
 }
 
 /**
- * Create an Anthropic client instance.
- * Requires ANTHROPIC_API_KEY environment variable.
+ * Create an LLM client for the configured provider.
+ *
+ * Provider selection:
+ *   options.provider argument   > PERSONA_X_PROVIDER env var   > "ollama"
  */
-export function createClient(): Anthropic {
-  return new Anthropic();
+export function createClient(options: CreateClientOptions = {}): LLMClient {
+  const name = options.provider ?? readProviderEnv() ?? "ollama";
+
+  switch (name) {
+    case "anthropic":
+      return createAnthropicProvider();
+    case "ollama":
+      return createOllamaProvider();
+    case "openai-compatible":
+      return createOpenAICompatibleProvider();
+    default: {
+      const exhaustive: never = name;
+      throw new Error(`Unknown provider: ${String(exhaustive)}`);
+    }
+  }
+}
+
+function readProviderEnv(): ProviderName | null {
+  const raw = process.env.PERSONA_X_PROVIDER;
+  if (!raw) return null;
+  if (raw === "anthropic" || raw === "ollama" || raw === "openai-compatible") {
+    return raw;
+  }
+  throw new Error(
+    `PERSONA_X_PROVIDER must be anthropic | ollama | openai-compatible, got: ${raw}`
+  );
 }
 
 /**
- * Send a message to the LLM with retry logic.
- * Uses exponential backoff: 1s, 2s, 4s delays between attempts.
+ * Send a message through the active provider with retry on transient failures.
  */
 export async function sendMessage(
-  client: Anthropic,
+  client: LLMClient,
   options: LLMRequestOptions
 ): Promise<LLMResponse> {
-  const { system, messages, maxTokens = 4096, temperature = 0.7 } = options;
-
   let lastError: Error | undefined;
 
   for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      const response = await client.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: maxTokens,
-        temperature,
-        ...(system ? { system } : {}),
-        messages: messages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        })),
-      });
-
-      const textBlock = response.content.find((block) => block.type === "text");
-      if (!textBlock || textBlock.type !== "text") {
-        throw new Error("No text content in LLM response");
-      }
-
-      return {
-        content: textBlock.text,
-        usage: {
-          input_tokens: response.usage.input_tokens,
-          output_tokens: response.usage.output_tokens,
-        },
-      };
+      return await client.sendMessage(options);
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err));
 
-      // Don't retry on authentication or validation errors
-      if (err instanceof Anthropic.AuthenticationError) throw lastError;
-      if (err instanceof Anthropic.BadRequestError) throw lastError;
+      if (err instanceof ProviderRequestError && !err.retryable) {
+        throw lastError;
+      }
 
-      // Retry on rate limits and server errors
       if (attempt < MAX_RETRIES - 1) {
-        const delay = BASE_DELAY_MS * Math.pow(2, attempt);
-        await sleep(delay);
+        await sleep(BASE_DELAY_MS * Math.pow(2, attempt));
       }
     }
   }
@@ -96,11 +101,11 @@ export async function sendMessage(
 }
 
 /**
- * Send a message and parse the response as JSON.
- * Extracts JSON from the response even if wrapped in markdown code blocks.
+ * Send a message and parse the response as JSON, extracting from
+ * markdown code fences when present.
  */
 export async function sendMessageForJSON<T>(
-  client: Anthropic,
+  client: LLMClient,
   options: LLMRequestOptions,
   validate: (data: unknown) => T
 ): Promise<T> {
@@ -119,23 +124,17 @@ export async function sendMessageForJSON<T>(
   return validate(parsed);
 }
 
-/**
- * Extract JSON from a string that may contain markdown code blocks.
- */
 function extractJSON(text: string): string {
-  // Try to find JSON in code blocks first
   const codeBlockMatch = text.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
   if (codeBlockMatch?.[1]) {
     return codeBlockMatch[1].trim();
   }
 
-  // Try to find raw JSON (object or array)
   const jsonMatch = text.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
   if (jsonMatch?.[1]) {
     return jsonMatch[1].trim();
   }
 
-  // Return as-is and let JSON.parse handle the error
   return text.trim();
 }
 

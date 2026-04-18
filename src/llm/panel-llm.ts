@@ -1,4 +1,4 @@
-import type Anthropic from "@anthropic-ai/sdk";
+import type { LLMClient } from "./client.js";
 import { sendMessage } from "./client.js";
 import type { PanelMessage, RubricInfluence } from "../runtime/interface.js";
 import type { PanelSession } from "../runtime/panel.js";
@@ -17,7 +17,7 @@ import type { RubricDimensionName } from "../schema/rubric.js";
  * Generate a response from a persona in a panel discussion round.
  */
 export async function generatePersonaResponse(
-  client: Anthropic,
+  client: LLMClient,
   session: PanelSession,
   persona: LoadedPersona,
   roundNumber: number,
@@ -47,6 +47,7 @@ export async function generatePersonaResponse(
     messages: [{ role: "user", content: userMessage }],
     maxTokens: 1024,
     temperature: 0.7,
+    cacheSystem: true,
   });
 
   const rubricInfluence = identifyRubricInfluence(persona);
@@ -64,7 +65,7 @@ export async function generatePersonaResponse(
  * Generate a round summary synthesising all contributions.
  */
 export async function generateRoundSummary(
-  client: Anthropic,
+  client: LLMClient,
   topic: string,
   messages: PanelMessage[]
 ): Promise<string> {
