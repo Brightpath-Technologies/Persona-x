@@ -74,7 +74,11 @@ export {
   getRubricSummary,
 } from "./engine/engine.js";
 
-export type { EngineState, EnginePhase, EngineAction } from "./engine/engine.js";
+export type {
+  EngineState,
+  EnginePhase,
+  EngineAction,
+} from "./engine/engine.js";
 
 // Discovery exports
 export {
@@ -138,10 +142,7 @@ export type {
   RubricInfluence,
 } from "./runtime/interface.js";
 
-export {
-  loadPersonaFromFile,
-  loadPersonasForPanel,
-} from "./runtime/loader.js";
+export { loadPersonaFromFile, loadPersonasForPanel } from "./runtime/loader.js";
 
 export {
   createPanelSession,

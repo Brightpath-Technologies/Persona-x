@@ -5,12 +5,15 @@ import {
   shouldPersonaContribute,
 } from "../../src/runtime/panel.js";
 import { generatePersonaSystemPrompt } from "../../src/runtime/interface.js";
-import type { LoadedPersona, PanelConfig } from "../../src/runtime/interface.js";
+import type {
+  LoadedPersona,
+  PanelConfig,
+} from "../../src/runtime/interface.js";
 import type { PersonaFile } from "../../src/schema/persona.js";
 
 function createTestPersona(
   name: string,
-  interventionScore: number
+  interventionScore: number,
 ): LoadedPersona {
   const file: PersonaFile = {
     metadata: {
@@ -38,7 +41,10 @@ function createTestPersona(
     rubric: {
       risk_appetite: { score: 5, note: "Balanced risk for testing" },
       evidence_threshold: { score: 5, note: "Moderate evidence needs" },
-      tolerance_for_ambiguity: { score: 5, note: "Balanced ambiguity tolerance" },
+      tolerance_for_ambiguity: {
+        score: 5,
+        note: "Balanced ambiguity tolerance",
+      },
       intervention_frequency: {
         score: interventionScore,
         note: `Intervention score ${interventionScore} for ordering tests`,

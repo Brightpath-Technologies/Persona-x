@@ -57,7 +57,7 @@ export const RubricScoreSchema = z.object({
     .string()
     .min(10, "Interpretive notes must be meaningful — at least 10 characters")
     .describe(
-      "Explains how the score shows up in practice. What the persona is likely to push on, let pass, or how it behaves at extremes."
+      "Explains how the score shows up in practice. What the persona is likely to push on, let pass, or how it behaves at extremes.",
     ),
 });
 
@@ -82,16 +82,17 @@ export type RubricProfile = z.infer<typeof RubricProfileSchema>;
  * Validate that a rubric profile is internally coherent.
  * Returns an array of warnings (not errors) for potentially inconsistent combinations.
  */
-export function validateRubricCoherence(
-  profile: RubricProfile
-): string[] {
+export function validateRubricCoherence(profile: RubricProfile): string[] {
   const warnings: string[] = [];
 
   // High risk appetite + high evidence threshold is unusual (wants to move fast but needs lots of proof)
-  if (profile.risk_appetite.score >= 8 && profile.evidence_threshold.score >= 8) {
+  if (
+    profile.risk_appetite.score >= 8 &&
+    profile.evidence_threshold.score >= 8
+  ) {
     warnings.push(
       "High risk appetite (${profile.risk_appetite.score}) combined with high evidence threshold (${profile.evidence_threshold.score}) is unusual. " +
-        "Consider whether the persona genuinely needs strong evidence before taking risks, or whether one score should be adjusted."
+        "Consider whether the persona genuinely needs strong evidence before taking risks, or whether one score should be adjusted.",
     );
   }
 
@@ -101,7 +102,7 @@ export function validateRubricCoherence(
     profile.evidence_threshold.score <= 3
   ) {
     warnings.push(
-      "Low tolerance for ambiguity combined with low evidence threshold suggests the persona wants clarity but doesn't require strong proof. Verify this is intentional."
+      "Low tolerance for ambiguity combined with low evidence threshold suggests the persona wants clarity but doesn't require strong proof. Verify this is intentional.",
     );
   }
 
@@ -112,7 +113,7 @@ export function validateRubricCoherence(
     profile.escalation_bias.score <= 3
   ) {
     warnings.push(
-      "High intervention frequency with low escalation bias suggests a hands-on persona that prefers to fix issues locally rather than escalate. Confirm this is the intended pattern."
+      "High intervention frequency with low escalation bias suggests a hands-on persona that prefers to fix issues locally rather than escalate. Confirm this is the intended pattern.",
     );
   }
 

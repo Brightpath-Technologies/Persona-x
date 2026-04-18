@@ -18,21 +18,43 @@ function makePassingBrief(): OpportunityBrief {
   return {
     opportunity: {
       title: "Test Opportunity",
-      problem_statement: "Organisations lack structured decision-making frameworks",
+      problem_statement:
+        "Organisations lack structured decision-making frameworks",
       proposed_solution: "Panel-based evaluation with structured personas",
       target_buyer: "Enterprise decision-makers",
     },
     scores: {
-      problem_severity: { score: 8, note: "High severity — affects all organisations" },
-      societal_benefit: { score: 7, note: "Reduces poor decisions in governance" },
-      market_viability: { score: 7, note: "Growing demand for structured AI tools" },
-      persona_x_fit: { score: 9, note: "Core use case for multi-perspective challenge" },
-      defensibility: { score: 6, note: "Moderate defensibility through persona methodology" },
-      execution_complexity: { score: 5, note: "Medium complexity — requires LLM integration" },
+      problem_severity: {
+        score: 8,
+        note: "High severity — affects all organisations",
+      },
+      societal_benefit: {
+        score: 7,
+        note: "Reduces poor decisions in governance",
+      },
+      market_viability: {
+        score: 7,
+        note: "Growing demand for structured AI tools",
+      },
+      persona_x_fit: {
+        score: 9,
+        note: "Core use case for multi-perspective challenge",
+      },
+      defensibility: {
+        score: 6,
+        note: "Moderate defensibility through persona methodology",
+      },
+      execution_complexity: {
+        score: 5,
+        note: "Medium complexity — requires LLM integration",
+      },
       composite: 7.3,
     },
     panel_tensions: [
-      { concern: "Market timing", resolution: "Early movers in structured AI persona space" },
+      {
+        concern: "Market timing",
+        resolution: "Early movers in structured AI persona space",
+      },
     ],
     decision: "proceed",
     rationale: "Strong problem-solution fit with clear buyer identification",
@@ -55,7 +77,8 @@ function makePassingChallengeReport(): ChallengeReport {
       {
         precedent: "Expert system failures of the 1990s",
         relevance: "Similar attempt to codify human judgement",
-        differentiator: "LLMs provide flexibility that rule-based systems lacked",
+        differentiator:
+          "LLMs provide flexibility that rule-based systems lacked",
       },
     ],
     ethical_assessment: {
@@ -155,7 +178,11 @@ describe("Stage Progression", () => {
     let pipeline = createDecisionPipeline("Test");
     pipeline = recordStageResult(pipeline, "propose", makePassingBrief());
     pipeline = advanceToNextStage(pipeline);
-    pipeline = recordStageResult(pipeline, "challenge", makePassingChallengeReport());
+    pipeline = recordStageResult(
+      pipeline,
+      "challenge",
+      makePassingChallengeReport(),
+    );
 
     expect(pipeline.artefacts.challenge_report).not.toBeNull();
     expect(pipeline.gate_results.stage_2!.passed).toBe(true);

@@ -12,7 +12,7 @@ function signal(
   name: ExtractedSignal["signal"],
   value: string,
   confidence: ExtractedSignal["confidence"] = "high",
-  source = "q1"
+  source = "q1",
 ): ExtractedSignal {
   return {
     signal: name,

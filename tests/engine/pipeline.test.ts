@@ -55,10 +55,16 @@ describe("Population Pipeline", () => {
 
   it("generates a build trace", () => {
     let state = createPipelineState(discovery);
-    state = recordPopulation(state, "purpose", "direct_input", {}, {
-      confidence: "high",
-      source_signals: ["user_stated"],
-    });
+    state = recordPopulation(
+      state,
+      "purpose",
+      "direct_input",
+      {},
+      {
+        confidence: "high",
+        source_signals: ["user_stated"],
+      },
+    );
     state = advanceSection(state);
 
     const trace = generateBuildTrace(state);

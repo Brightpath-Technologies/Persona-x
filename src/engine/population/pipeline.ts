@@ -21,13 +21,13 @@ import type { DiscoveryState } from "../discovery/discovery.js";
  * Later sections must not contradict earlier ones without explicit confirmation.
  */
 export const POPULATION_ORDER = [
-  "purpose",       // Persona Purpose & Panel Use
-  "panel_role",    // Panel Role & Functional Contribution
-  "rubric",        // Judgement & Reasoning Profile
-  "reasoning",     // Reasoning & Decision Tendencies
-  "interaction",   // Interaction & Challenge Style
-  "boundaries",    // Boundaries, Constraints & Refusals
-  "optional",      // Communication, Knowledge Base, Provenance (optional sections)
+  "purpose", // Persona Purpose & Panel Use
+  "panel_role", // Panel Role & Functional Contribution
+  "rubric", // Judgement & Reasoning Profile
+  "reasoning", // Reasoning & Decision Tendencies
+  "interaction", // Interaction & Challenge Style
+  "boundaries", // Boundaries, Constraints & Refusals
+  "optional", // Communication, Knowledge Base, Provenance (optional sections)
 ] as const;
 
 export type PopulationSection = (typeof POPULATION_ORDER)[number];
@@ -67,9 +67,7 @@ export interface PipelineState {
 /**
  * Create an initial pipeline state from completed discovery.
  */
-export function createPipelineState(
-  discovery: DiscoveryState
-): PipelineState {
+export function createPipelineState(discovery: DiscoveryState): PipelineState {
   return {
     current_section_index: 0,
     completed_sections: [],
@@ -83,7 +81,7 @@ export function createPipelineState(
  * Get the current section that needs to be populated.
  */
 export function getCurrentSection(
-  state: PipelineState
+  state: PipelineState,
 ): PopulationSection | null {
   if (state.current_section_index >= POPULATION_ORDER.length) {
     return null;
@@ -120,7 +118,7 @@ export function recordPopulation(
     provider?: string;
     model?: string;
     timestamp?: string;
-  }
+  },
 ): PipelineState {
   const record: PopulationRecord = {
     section,
@@ -174,7 +172,7 @@ export function recordPopulation(
  */
 export function shouldAskUser(
   section: PopulationSection,
-  state: PipelineState
+  state: PipelineState,
 ): boolean {
   // Always ask for boundaries — ask when "a boundary, refusal, or escalation posture is unclear"
   if (section === "boundaries") return true;
@@ -185,7 +183,7 @@ export function shouldAskUser(
   // For rubric, check if we have sufficient scenario/signal data
   if (section === "rubric") {
     const signalCount = state.discovery.signals.filter(
-      (s) => s.confidence === "high" || s.confidence === "medium"
+      (s) => s.confidence === "high" || s.confidence === "medium",
     ).length;
     // Need at least 4 strong signals to infer rubric scores
     return signalCount < 4;
@@ -193,7 +191,7 @@ export function shouldAskUser(
 
   // For other sections, infer if we have high-confidence signals
   const relevantSignals = state.discovery.signals.filter(
-    (s) => s.confidence === "high"
+    (s) => s.confidence === "high",
   );
   return relevantSignals.length < 2;
 }
@@ -212,7 +210,7 @@ export function isPipelineComplete(state: PipelineState): boolean {
   ];
 
   return required.every((section) =>
-    state.completed_sections.includes(section)
+    state.completed_sections.includes(section),
   );
 }
 
@@ -223,9 +221,7 @@ export function isPipelineComplete(state: PipelineState): boolean {
  * are emitted with provider="human" and model="n/a" so the audit trail
  * is still complete.
  */
-export function buildSectionGenerationProvenance(
-  state: PipelineState
-): Array<{
+export function buildSectionGenerationProvenance(state: PipelineState): Array<{
   section: string;
   provider: string;
   model: string;
@@ -265,7 +261,9 @@ export function generateBuildTrace(state: PipelineState): string {
     if (record.inferred && record.inference_justification) {
       lines.push(`- Inference: ${record.inference_justification}`);
     }
-    lines.push(`- Source signals: ${record.source_signals.join(", ") || "none"}`);
+    lines.push(
+      `- Source signals: ${record.source_signals.join(", ") || "none"}`,
+    );
     lines.push("");
   }
 

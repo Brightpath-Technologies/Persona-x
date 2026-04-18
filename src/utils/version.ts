@@ -29,7 +29,7 @@ export function formatSemVer(version: SemVer): string {
 
 export function bumpVersion(
   current: string,
-  type: "major" | "minor" | "patch"
+  type: "major" | "minor" | "patch",
 ): string {
   const parsed = parseSemVer(current);
   if (!parsed) return "1.0.0";
@@ -63,7 +63,7 @@ export interface ChangelogEntry {
  * Determine the appropriate version bump type based on which sections changed.
  */
 export function inferBumpType(
-  changedSections: string[]
+  changedSections: string[],
 ): "major" | "minor" | "patch" {
   const majorSections = ["rubric", "boundaries", "purpose"];
   const minorSections = [

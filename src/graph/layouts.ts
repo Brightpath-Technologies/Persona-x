@@ -19,7 +19,7 @@ export interface ForceLayoutOptions {
 
 export function forceDirectedLayout<N, E>(
   graph: Graph<N, E>,
-  options: ForceLayoutOptions = {}
+  options: ForceLayoutOptions = {},
 ): LayoutResult {
   const iterations = options.iterations ?? 200;
   const repulsion = options.repulsion ?? 0.05;

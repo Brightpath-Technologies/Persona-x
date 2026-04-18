@@ -24,10 +24,7 @@ import type { ExtractedSignal } from "../discovery/discovery.js";
 /** Mapping from priority signals to the rubric dimensions they influence */
 const SIGNAL_TO_DIMENSION_MAP: Record<string, RubricDimensionName[]> = {
   discomfort_triggers: ["risk_appetite", "escalation_bias"],
-  evidence_change_thresholds: [
-    "evidence_threshold",
-    "delivery_vs_rigour_bias",
-  ],
+  evidence_change_thresholds: ["evidence_threshold", "delivery_vs_rigour_bias"],
   ambiguity_handling: ["tolerance_for_ambiguity", "delivery_vs_rigour_bias"],
   pressure_behaviour: [
     "intervention_frequency",
@@ -51,7 +48,7 @@ export interface ScoreCandidate {
  * This is the intermediate step — candidates are then resolved into final scores.
  */
 export function generateScoreCandidates(
-  signals: ExtractedSignal[]
+  signals: ExtractedSignal[],
 ): ScoreCandidate[] {
   const candidates: ScoreCandidate[] = [];
 
@@ -80,7 +77,7 @@ export function generateScoreCandidates(
  */
 export function resolveScore(
   dimension: RubricDimensionName,
-  candidates: ScoreCandidate[]
+  candidates: ScoreCandidate[],
 ): RubricScore | null {
   const relevant = candidates.filter((c) => c.dimension === dimension);
   if (relevant.length === 0) return null;
@@ -88,25 +85,22 @@ export function resolveScore(
   // Sort by confidence: high > medium > low
   const confidenceOrder = { high: 3, medium: 2, low: 1 };
   relevant.sort(
-    (a, b) => confidenceOrder[b.confidence] - confidenceOrder[a.confidence]
+    (a, b) => confidenceOrder[b.confidence] - confidenceOrder[a.confidence],
   );
 
   // Use highest-confidence candidates
   const bestConfidence = relevant[0]!.confidence;
   const bestCandidates = relevant.filter(
-    (c) => c.confidence === bestConfidence
+    (c) => c.confidence === bestConfidence,
   );
 
   // Average the scores from equally-confident candidates
   const avgScore = Math.round(
-    bestCandidates.reduce((sum, c) => sum + c.score, 0) /
-      bestCandidates.length
+    bestCandidates.reduce((sum, c) => sum + c.score, 0) / bestCandidates.length,
   );
 
   // Build interpretive note from the reasoning
-  const note = bestCandidates
-    .map((c) => c.reasoning)
-    .join(". ");
+  const note = bestCandidates.map((c) => c.reasoning).join(". ");
 
   return {
     score: Math.max(1, Math.min(10, avgScore)),
@@ -118,9 +112,7 @@ export function resolveScore(
  * Build a complete rubric profile from discovery signals.
  * Returns the profile plus any coherence warnings.
  */
-export function buildRubricProfile(
-  signals: ExtractedSignal[]
-): {
+export function buildRubricProfile(signals: ExtractedSignal[]): {
   profile: Partial<RubricProfile>;
   warnings: string[];
   missing_dimensions: RubricDimensionName[];

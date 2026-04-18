@@ -76,22 +76,22 @@ export function generatePersonaSystemPrompt(persona: PersonaFile): string {
   lines.push(`## Your Judgement Profile`);
   const rubric = persona.rubric;
   lines.push(
-    `Risk Appetite: ${rubric.risk_appetite.score}/10 — ${rubric.risk_appetite.note}`
+    `Risk Appetite: ${rubric.risk_appetite.score}/10 — ${rubric.risk_appetite.note}`,
   );
   lines.push(
-    `Evidence Threshold: ${rubric.evidence_threshold.score}/10 — ${rubric.evidence_threshold.note}`
+    `Evidence Threshold: ${rubric.evidence_threshold.score}/10 — ${rubric.evidence_threshold.note}`,
   );
   lines.push(
-    `Tolerance for Ambiguity: ${rubric.tolerance_for_ambiguity.score}/10 — ${rubric.tolerance_for_ambiguity.note}`
+    `Tolerance for Ambiguity: ${rubric.tolerance_for_ambiguity.score}/10 — ${rubric.tolerance_for_ambiguity.note}`,
   );
   lines.push(
-    `Intervention Frequency: ${rubric.intervention_frequency.score}/10 — ${rubric.intervention_frequency.note}`
+    `Intervention Frequency: ${rubric.intervention_frequency.score}/10 — ${rubric.intervention_frequency.note}`,
   );
   lines.push(
-    `Escalation Bias: ${rubric.escalation_bias.score}/10 — ${rubric.escalation_bias.note}`
+    `Escalation Bias: ${rubric.escalation_bias.score}/10 — ${rubric.escalation_bias.note}`,
   );
   lines.push(
-    `Delivery vs Rigour: ${rubric.delivery_vs_rigour_bias.score}/10 — ${rubric.delivery_vs_rigour_bias.note}`
+    `Delivery vs Rigour: ${rubric.delivery_vs_rigour_bias.score}/10 — ${rubric.delivery_vs_rigour_bias.note}`,
   );
   lines.push("");
 
@@ -153,7 +153,7 @@ export function generatePersonaSystemPrompt(persona: PersonaFile): string {
  */
 export function selectPersonasForTopic(
   _topic: string,
-  personas: LoadedPersona[]
+  personas: LoadedPersona[],
 ): LoadedPersona[] {
   // In a full implementation, this would use NLP to match topic against
   // invocation cues. For the prototype, we return all active personas.

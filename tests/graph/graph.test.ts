@@ -61,7 +61,7 @@ describe("graph builders", () => {
   it("rejects edges to unknown nodes", () => {
     const g = addNode(createGraph(), { id: "a" });
     expect(() => addEdge(g, { source: "a", target: "missing" })).toThrow(
-      /not a known node/
+      /not a known node/,
     );
   });
 
@@ -73,10 +73,11 @@ describe("graph builders", () => {
 
   it("neighbours respects directedness", () => {
     const directed = sample();
-    expect(neighbours(directed, "a").map((n) => n.id).sort()).toEqual([
-      "b",
-      "c",
-    ]);
+    expect(
+      neighbours(directed, "a")
+        .map((n) => n.id)
+        .sort(),
+    ).toEqual(["b", "c"]);
     expect(neighbours(directed, "b")).toHaveLength(0);
 
     let undirected = createGraph<null, null>(false);
@@ -115,7 +116,7 @@ describe("graph exports", () => {
     expect(d.startsWith("digraph G {")).toBe(true);
     expect(d).toContain('"a" [label="Alpha"];');
     expect(d).toContain('"a" -> "b"');
-    expect(d).toContain('weight=2');
+    expect(d).toContain("weight=2");
   });
 
   it("roundtrips via JSON", () => {

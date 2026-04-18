@@ -17,7 +17,7 @@ function stateWithSignals(signals: ExtractedSignal[]): PipelineState {
 function sig(
   name: ExtractedSignal["signal"],
   value: string,
-  confidence: ExtractedSignal["confidence"]
+  confidence: ExtractedSignal["confidence"],
 ): ExtractedSignal {
   return { signal: name, value, confidence, source_question_id: "q" };
 }
@@ -61,9 +61,7 @@ describe("evaluateInference", () => {
   });
 
   it("declines to infer when signal coverage is insufficient", () => {
-    const state = stateWithSignals([
-      sig("pressure_behaviour", "v", "low"),
-    ]);
+    const state = stateWithSignals([sig("pressure_behaviour", "v", "low")]);
     const decision = evaluateInference("reasoning", state);
     expect(decision.can_infer).toBe(false);
     expect(decision.justification).toMatch(/insufficient/i);

@@ -18,7 +18,7 @@ const program = new Command();
 program
   .name("persona-x")
   .description(
-    "Persona-x — create, validate, and manage structured AI persona files"
+    "Persona-x — create, validate, and manage structured AI persona files",
   )
   .version("0.1.0");
 
@@ -26,7 +26,10 @@ program
   .command("create")
   .description("Create a new persona definition file through guided discovery")
   .option("-o, --output <path>", "Output file path", "./persona.yaml")
-  .option("--non-interactive", "Use defaults instead of prompting (for testing)")
+  .option(
+    "--non-interactive",
+    "Use defaults instead of prompting (for testing)",
+  )
   .action(async (options: { output: string; nonInteractive?: boolean }) => {
     await createCommand(options);
   });
@@ -36,14 +39,21 @@ program
   .description("Refine an existing persona definition file")
   .argument("<file>", "Path to the persona YAML file to refine")
   .option("-s, --section <section>", "Specific section to refine")
-  .option("-o, --output <path>", "Output file path (defaults to overwriting input)")
-  .action(async (file: string, options: { section?: string; output?: string }) => {
-    await refineCommand(file, options);
-  });
+  .option(
+    "-o, --output <path>",
+    "Output file path (defaults to overwriting input)",
+  )
+  .action(
+    async (file: string, options: { section?: string; output?: string }) => {
+      await refineCommand(file, options);
+    },
+  );
 
 program
   .command("validate")
-  .description("Validate a persona YAML file against the persona definition schema")
+  .description(
+    "Validate a persona YAML file against the persona definition schema",
+  )
   .argument("<file>", "Path to the persona YAML file to validate")
   .action(async (file: string) => {
     const { loadPersonaFromFile } = await import("../runtime/loader.js");
@@ -74,12 +84,9 @@ program
   .option("-r, --rounds <number>", "Number of discussion rounds", "3")
   .option(
     "--dry-run",
-    "Load personas and print system prompts without calling the LLM"
+    "Load personas and print system prompts without calling the LLM",
   )
-  .option(
-    "-o, --output <path>",
-    "Write the transcript to this Markdown file"
-  )
+  .option("-o, --output <path>", "Write the transcript to this Markdown file")
   .action(
     async (
       files: string[],
@@ -88,7 +95,7 @@ program
         rounds: string;
         dryRun?: boolean;
         output?: string;
-      }
+      },
     ) => {
       const { loadPersonasForPanel } = await import("../runtime/loader.js");
       const {
@@ -113,7 +120,7 @@ program
       }
 
       console.log(
-        `Loaded ${result.personas.length} persona(s): ${result.personas.map((p) => p.file.metadata.name).join(", ")}`
+        `Loaded ${result.personas.length} persona(s): ${result.personas.map((p) => p.file.metadata.name).join(", ")}`,
       );
 
       const session = createPanelSession({
@@ -126,7 +133,7 @@ program
 
       const order = determineSpeakingOrder(result.personas);
       console.log(
-        `\nSpeaking order (by intervention frequency): ${order.map((p) => p.file.metadata.name).join(" → ")}`
+        `\nSpeaking order (by intervention frequency): ${order.map((p) => p.file.metadata.name).join(" → ")}`,
       );
 
       if (options.dryRun) {
@@ -141,14 +148,12 @@ program
       let client;
       try {
         client = createClient();
-        console.log(
-          `Using provider: ${client.name} (model: ${client.model})`
-        );
+        console.log(`Using provider: ${client.name} (model: ${client.model})`);
       } catch (err) {
         console.error("Failed to initialise LLM provider.");
         console.error(err instanceof Error ? err.message : String(err));
         console.error(
-          "Set PERSONA_X_PROVIDER (ollama | anthropic | openai-compatible) or use --dry-run."
+          "Set PERSONA_X_PROVIDER (ollama | anthropic | openai-compatible) or use --dry-run.",
         );
         process.exit(1);
       }
@@ -165,7 +170,7 @@ program
       } else {
         console.log("\n" + transcript);
       }
-    }
+    },
   );
 
 program.parse();

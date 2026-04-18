@@ -50,10 +50,10 @@ export function yamlToPersona(yamlContent: string): {
     return { success: true, data: result.data };
   }
 
-  const errors =
-    result.errors?.issues.map(
-      (issue: { path: (string | number)[]; message: string }) => `${issue.path.join(".")}: ${issue.message}`
-    ) ?? ["Unknown validation error"];
+  const errors = result.errors?.issues.map(
+    (issue: { path: (string | number)[]; message: string }) =>
+      `${issue.path.join(".")}: ${issue.message}`,
+  ) ?? ["Unknown validation error"];
 
   return { success: false, errors };
 }
@@ -62,7 +62,7 @@ export function yamlToPersona(yamlContent: string): {
  * Read a persona file from disk.
  */
 export async function readPersonaFile(
-  filePath: string
+  filePath: string,
 ): Promise<{ success: boolean; data?: PersonaFile; errors?: string[] }> {
   try {
     const content = await readFile(filePath, "utf-8");
@@ -80,7 +80,7 @@ export async function readPersonaFile(
  */
 export async function writePersonaFile(
   filePath: string,
-  persona: PersonaFile
+  persona: PersonaFile,
 ): Promise<void> {
   const yaml = personaToYaml(persona);
   await writeFile(filePath, yaml, "utf-8");

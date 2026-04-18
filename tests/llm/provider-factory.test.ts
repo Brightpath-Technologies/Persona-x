@@ -105,21 +105,24 @@ describe("offline guard", () => {
 
   it("assertOfflineCompliant is a no-op when offline mode is off", () => {
     expect(() =>
-      assertOfflineCompliant("anthropic", "https://api.anthropic.com")
+      assertOfflineCompliant("anthropic", "https://api.anthropic.com"),
     ).not.toThrow();
   });
 
   it("assertOfflineCompliant blocks remote URLs when offline", () => {
     process.env.PERSONA_X_OFFLINE = "1";
     expect(() =>
-      assertOfflineCompliant("anthropic", "https://api.anthropic.com")
+      assertOfflineCompliant("anthropic", "https://api.anthropic.com"),
     ).toThrow(OfflineViolationError);
   });
 
   it("assertOfflineCompliant allows localhost when offline", () => {
     process.env.PERSONA_X_OFFLINE = "1";
     expect(() =>
-      assertOfflineCompliant("ollama", "http://localhost:11434/v1/chat/completions")
+      assertOfflineCompliant(
+        "ollama",
+        "http://localhost:11434/v1/chat/completions",
+      ),
     ).not.toThrow();
   });
 

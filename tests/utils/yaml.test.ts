@@ -36,7 +36,10 @@ function samplePersona(): PersonaFile {
     },
     rubric: {
       risk_appetite: { score: 4, note: "Balanced conservative tendency" },
-      evidence_threshold: { score: 7, note: "Wants two independent data points" },
+      evidence_threshold: {
+        score: 7,
+        note: "Wants two independent data points",
+      },
       tolerance_for_ambiguity: { score: 5, note: "Accepts moderate gaps" },
       intervention_frequency: { score: 6, note: "Steps in on weak claims" },
       escalation_bias: { score: 4, note: "Prefers to resolve locally" },

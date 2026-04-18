@@ -56,7 +56,7 @@ export function createPanelSession(config: PanelConfig): PanelSession {
  * This reflects the rubric's intervention_frequency dimension.
  */
 export function determineSpeakingOrder(
-  personas: LoadedPersona[]
+  personas: LoadedPersona[],
 ): LoadedPersona[] {
   return [...personas].sort((a, b) => {
     const aFreq = a.file.rubric.intervention_frequency.score;
@@ -75,7 +75,7 @@ export function determineSpeakingOrder(
 export function shouldPersonaContribute(
   persona: LoadedPersona,
   roundNumber: number,
-  _totalRounds: number
+  _totalRounds: number,
 ): boolean {
   const freq = persona.file.rubric.intervention_frequency.score;
 
@@ -94,7 +94,7 @@ export function shouldPersonaContribute(
  */
 export function getPersonaPrompt(
   session: PanelSession,
-  personaId: string
+  personaId: string,
 ): string | undefined {
   return session.system_prompts.get(personaId);
 }
@@ -109,7 +109,7 @@ export function getPersonaPrompt(
 export async function runPanelRound(
   client: LLMClient,
   session: PanelSession,
-  roundNumber: number
+  roundNumber: number,
 ): Promise<PanelRound> {
   const order = determineSpeakingOrder(session.config.personas);
   const messages: PanelMessage[] = [];
@@ -127,7 +127,7 @@ export async function runPanelRound(
       session,
       persona,
       roundNumber,
-      messages
+      messages,
     );
     messages.push(message);
   }
@@ -154,7 +154,7 @@ export async function runPanelRound(
  */
 export async function runPanel(
   client: LLMClient,
-  session: PanelSession
+  session: PanelSession,
 ): Promise<PanelSession> {
   for (let round = 1; round <= session.config.max_rounds; round++) {
     const result = await runPanelRound(client, session, round);
@@ -173,7 +173,7 @@ export function formatPanelDiscussion(session: PanelSession): string {
   lines.push("");
   lines.push(`Context: ${session.config.context}`);
   lines.push(
-    `Personas: ${session.config.personas.map((p) => p.file.metadata.name).join(", ")}`
+    `Personas: ${session.config.personas.map((p) => p.file.metadata.name).join(", ")}`,
   );
   lines.push("");
 

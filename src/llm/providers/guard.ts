@@ -25,7 +25,7 @@ export function isLocalHost(hostname: string): boolean {
  */
 export function assertOfflineCompliant(
   provider: ProviderName,
-  url: string
+  url: string,
 ): void {
   if (!isOfflineMode()) return;
 

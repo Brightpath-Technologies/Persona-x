@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { PersonaFileSchema, validatePersonaFile } from "../../src/schema/persona.js";
+import {
+  PersonaFileSchema,
+  validatePersonaFile,
+} from "../../src/schema/persona.js";
 import {
   RubricProfileSchema,
   RubricScoreSchema,
@@ -49,12 +52,30 @@ describe("RubricScoreSchema", () => {
 
 describe("RubricProfileSchema", () => {
   const validProfile = {
-    risk_appetite: { score: 3, note: "Conservative approach to risk-taking in decisions" },
-    evidence_threshold: { score: 8, note: "Requires documented evidence before accepting claims" },
-    tolerance_for_ambiguity: { score: 4, note: "Uncomfortable with ambiguity, pushes for clarity" },
-    intervention_frequency: { score: 7, note: "Intervenes regularly at high-impact moments" },
-    escalation_bias: { score: 6, note: "Moderate escalation when regulatory risk involved" },
-    delivery_vs_rigour_bias: { score: 3, note: "Strongly favours rigour over delivery speed" },
+    risk_appetite: {
+      score: 3,
+      note: "Conservative approach to risk-taking in decisions",
+    },
+    evidence_threshold: {
+      score: 8,
+      note: "Requires documented evidence before accepting claims",
+    },
+    tolerance_for_ambiguity: {
+      score: 4,
+      note: "Uncomfortable with ambiguity, pushes for clarity",
+    },
+    intervention_frequency: {
+      score: 7,
+      note: "Intervenes regularly at high-impact moments",
+    },
+    escalation_bias: {
+      score: 6,
+      note: "Moderate escalation when regulatory risk involved",
+    },
+    delivery_vs_rigour_bias: {
+      score: 3,
+      note: "Strongly favours rigour over delivery speed",
+    },
   };
 
   it("accepts a complete valid rubric profile", () => {
@@ -77,12 +98,30 @@ describe("RubricProfileSchema", () => {
 describe("validateRubricCoherence", () => {
   it("warns about high risk appetite combined with high evidence threshold", () => {
     const profile = {
-      risk_appetite: { score: 9, note: "Very bold risk taker in all situations" },
-      evidence_threshold: { score: 9, note: "Requires extensive evidence for every claim" },
-      tolerance_for_ambiguity: { score: 5, note: "Balanced approach to handling ambiguity" },
-      intervention_frequency: { score: 5, note: "Moderate intervention in discussions" },
-      escalation_bias: { score: 5, note: "Balanced approach to escalation decisions" },
-      delivery_vs_rigour_bias: { score: 5, note: "Balanced between delivery and rigour" },
+      risk_appetite: {
+        score: 9,
+        note: "Very bold risk taker in all situations",
+      },
+      evidence_threshold: {
+        score: 9,
+        note: "Requires extensive evidence for every claim",
+      },
+      tolerance_for_ambiguity: {
+        score: 5,
+        note: "Balanced approach to handling ambiguity",
+      },
+      intervention_frequency: {
+        score: 5,
+        note: "Moderate intervention in discussions",
+      },
+      escalation_bias: {
+        score: 5,
+        note: "Balanced approach to escalation decisions",
+      },
+      delivery_vs_rigour_bias: {
+        score: 5,
+        note: "Balanced between delivery and rigour",
+      },
     };
     const warnings = validateRubricCoherence(profile);
     expect(warnings.length).toBeGreaterThan(0);
@@ -90,12 +129,30 @@ describe("validateRubricCoherence", () => {
 
   it("returns no warnings for a coherent profile", () => {
     const profile = {
-      risk_appetite: { score: 3, note: "Conservative risk posture in all contexts" },
-      evidence_threshold: { score: 8, note: "Requires documented evidence before proceeding" },
-      tolerance_for_ambiguity: { score: 4, note: "Prefers clarity over operating with ambiguity" },
-      intervention_frequency: { score: 7, note: "Intervenes at high-impact moments" },
-      escalation_bias: { score: 6, note: "Escalates when material risk is present" },
-      delivery_vs_rigour_bias: { score: 3, note: "Strongly favours thorough analysis" },
+      risk_appetite: {
+        score: 3,
+        note: "Conservative risk posture in all contexts",
+      },
+      evidence_threshold: {
+        score: 8,
+        note: "Requires documented evidence before proceeding",
+      },
+      tolerance_for_ambiguity: {
+        score: 4,
+        note: "Prefers clarity over operating with ambiguity",
+      },
+      intervention_frequency: {
+        score: 7,
+        note: "Intervenes at high-impact moments",
+      },
+      escalation_bias: {
+        score: 6,
+        note: "Escalates when material risk is present",
+      },
+      delivery_vs_rigour_bias: {
+        score: 3,
+        note: "Strongly favours thorough analysis",
+      },
     };
     const warnings = validateRubricCoherence(profile);
     expect(warnings).toEqual([]);
@@ -129,10 +186,19 @@ describe("validatePersonaFile", () => {
     rubric: {
       risk_appetite: { score: 5, note: "Balanced risk approach for testing" },
       evidence_threshold: { score: 5, note: "Moderate evidence requirements" },
-      tolerance_for_ambiguity: { score: 5, note: "Balanced ambiguity tolerance" },
-      intervention_frequency: { score: 5, note: "Moderate intervention pattern" },
+      tolerance_for_ambiguity: {
+        score: 5,
+        note: "Balanced ambiguity tolerance",
+      },
+      intervention_frequency: {
+        score: 5,
+        note: "Moderate intervention pattern",
+      },
       escalation_bias: { score: 5, note: "Balanced escalation tendency" },
-      delivery_vs_rigour_bias: { score: 5, note: "Balanced delivery and rigour" },
+      delivery_vs_rigour_bias: {
+        score: 5,
+        note: "Balanced delivery and rigour",
+      },
     },
     reasoning: {
       default_assumptions: ["Input data may be invalid"],
@@ -144,7 +210,8 @@ describe("validatePersonaFile", () => {
       primary_mode: "assertions" as const,
       challenge_strength: "moderate" as const,
       silent_when: ["All validations pass"],
-      handles_poor_input: "Reports specific validation errors with path and message",
+      handles_poor_input:
+        "Reports specific validation errors with path and message",
     },
     boundaries: {
       will_not_engage: ["Runtime behaviour testing"],

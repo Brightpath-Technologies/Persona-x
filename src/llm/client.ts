@@ -32,7 +32,10 @@ export type {
   ProviderName,
 } from "./providers/types.js";
 
-export { OfflineViolationError, ProviderRequestError } from "./providers/types.js";
+export {
+  OfflineViolationError,
+  ProviderRequestError,
+} from "./providers/types.js";
 
 export interface CreateClientOptions {
   provider?: ProviderName;
@@ -68,7 +71,7 @@ function readProviderEnv(): ProviderName | null {
     return raw;
   }
   throw new Error(
-    `PERSONA_X_PROVIDER must be anthropic | ollama | openai-compatible, got: ${raw}`
+    `PERSONA_X_PROVIDER must be anthropic | ollama | openai-compatible, got: ${raw}`,
   );
 }
 
@@ -77,7 +80,7 @@ function readProviderEnv(): ProviderName | null {
  */
 export async function sendMessage(
   client: LLMClient,
-  options: LLMRequestOptions
+  options: LLMRequestOptions,
 ): Promise<LLMResponse> {
   let lastError: Error | undefined;
 
@@ -107,7 +110,7 @@ export async function sendMessage(
 export async function sendMessageForJSON<T>(
   client: LLMClient,
   options: LLMRequestOptions,
-  validate: (data: unknown) => T
+  validate: (data: unknown) => T,
 ): Promise<T> {
   const response = await sendMessage(client, options);
   const jsonStr = extractJSON(response.content);
@@ -117,7 +120,7 @@ export async function sendMessageForJSON<T>(
     parsed = JSON.parse(jsonStr);
   } catch {
     throw new Error(
-      `Failed to parse LLM response as JSON: ${response.content.substring(0, 200)}`
+      `Failed to parse LLM response as JSON: ${response.content.substring(0, 200)}`,
     );
   }
 

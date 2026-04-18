@@ -6,14 +6,14 @@ import type { Graph, GraphEdge, GraphNode } from "./types.js";
  */
 
 export function createGraph<N = unknown, E = unknown>(
-  directed = true
+  directed = true,
 ): Graph<N, E> {
   return { nodes: [], edges: [], directed };
 }
 
 export function addNode<N, E>(
   graph: Graph<N, E>,
-  node: GraphNode<N>
+  node: GraphNode<N>,
 ): Graph<N, E> {
   if (graph.nodes.some((n) => n.id === node.id)) {
     throw new Error(`Duplicate node id: ${node.id}`);
@@ -23,7 +23,7 @@ export function addNode<N, E>(
 
 export function addEdge<N, E>(
   graph: Graph<N, E>,
-  edge: GraphEdge<E>
+  edge: GraphEdge<E>,
 ): Graph<N, E> {
   const sourceExists = graph.nodes.some((n) => n.id === edge.source);
   const targetExists = graph.nodes.some((n) => n.id === edge.target);
@@ -36,10 +36,7 @@ export function addEdge<N, E>(
   return { ...graph, edges: [...graph.edges, edge] };
 }
 
-export function removeNode<N, E>(
-  graph: Graph<N, E>,
-  id: string
-): Graph<N, E> {
+export function removeNode<N, E>(graph: Graph<N, E>, id: string): Graph<N, E> {
   return {
     ...graph,
     nodes: graph.nodes.filter((n) => n.id !== id),
@@ -47,10 +44,7 @@ export function removeNode<N, E>(
   };
 }
 
-export function mergeGraphs<N, E>(
-  a: Graph<N, E>,
-  b: Graph<N, E>
-): Graph<N, E> {
+export function mergeGraphs<N, E>(a: Graph<N, E>, b: Graph<N, E>): Graph<N, E> {
   const nodeMap = new Map<string, GraphNode<N>>();
   for (const n of a.nodes) nodeMap.set(n.id, n);
   for (const n of b.nodes) nodeMap.set(n.id, n); // b wins on id collision
@@ -63,7 +57,7 @@ export function mergeGraphs<N, E>(
 
 export function neighbours<N, E>(
   graph: Graph<N, E>,
-  id: string
+  id: string,
 ): GraphNode<N>[] {
   const ids = new Set<string>();
   for (const edge of graph.edges) {

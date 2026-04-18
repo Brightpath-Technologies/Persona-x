@@ -24,7 +24,7 @@ export interface AnthropicProviderOptions {
 }
 
 export function createAnthropicProvider(
-  options: AnthropicProviderOptions = {}
+  options: AnthropicProviderOptions = {},
 ): LLMProvider {
   const model = options.model ?? process.env.PERSONA_X_MODEL ?? DEFAULT_MODEL;
   const apiKey = options.apiKey ?? process.env.ANTHROPIC_API_KEY;
@@ -54,14 +54,14 @@ export function createAnthropicProvider(
         });
 
         const textBlock = response.content.find(
-          (block) => block.type === "text"
+          (block) => block.type === "text",
         );
         if (!textBlock || textBlock.type !== "text") {
           throw new ProviderRequestError(
             "No text content in Anthropic response",
             "anthropic",
             undefined,
-            false
+            false,
           );
         }
 
@@ -90,7 +90,7 @@ export function createAnthropicProvider(
             `Anthropic authentication failed: ${err.message}`,
             "anthropic",
             err,
-            false
+            false,
           );
         }
         if (err instanceof Anthropic.BadRequestError) {
@@ -98,14 +98,14 @@ export function createAnthropicProvider(
             `Anthropic request malformed: ${err.message}`,
             "anthropic",
             err,
-            false
+            false,
           );
         }
         throw new ProviderRequestError(
           `Anthropic request failed: ${err instanceof Error ? err.message : String(err)}`,
           "anthropic",
           err,
-          true
+          true,
         );
       }
     },
@@ -120,7 +120,7 @@ export function createAnthropicProvider(
  */
 function buildSystemBlocks(
   system: string | undefined,
-  cacheSystem: boolean | undefined
+  cacheSystem: boolean | undefined,
 ):
   | string
   | Array<{

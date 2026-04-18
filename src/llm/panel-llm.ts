@@ -21,7 +21,7 @@ export async function generatePersonaResponse(
   session: PanelSession,
   persona: LoadedPersona,
   roundNumber: number,
-  previousMessages: PanelMessage[]
+  previousMessages: PanelMessage[],
 ): Promise<PanelMessage> {
   const systemPrompt = session.system_prompts.get(persona.id);
   if (!systemPrompt) {
@@ -32,15 +32,17 @@ export async function generatePersonaResponse(
   const context = session.config.context;
 
   // Build conversation history for this round
-  const conversationContext = previousMessages.length > 0
-    ? previousMessages
-        .map((m) => `${m.persona_name}: ${m.content}`)
-        .join("\n\n")
-    : "No previous contributions in this round.";
+  const conversationContext =
+    previousMessages.length > 0
+      ? previousMessages
+          .map((m) => `${m.persona_name}: ${m.content}`)
+          .join("\n\n")
+      : "No previous contributions in this round.";
 
-  const userMessage = roundNumber === 1
-    ? `The panel discussion topic is: "${topic}"\nContext: ${context}\n\nThis is Round ${roundNumber}. Provide your initial perspective on this topic, shaped by your rubric profile and role. Be concise (2-4 paragraphs).`
-    : `Round ${roundNumber} of the panel discussion on: "${topic}"\n\nPrevious contributions this round:\n${conversationContext}\n\nRespond to the points raised by other panellists. Build on, challenge, or qualify their positions based on your rubric profile. Be concise (1-3 paragraphs).`;
+  const userMessage =
+    roundNumber === 1
+      ? `The panel discussion topic is: "${topic}"\nContext: ${context}\n\nThis is Round ${roundNumber}. Provide your initial perspective on this topic, shaped by your rubric profile and role. Be concise (2-4 paragraphs).`
+      : `Round ${roundNumber} of the panel discussion on: "${topic}"\n\nPrevious contributions this round:\n${conversationContext}\n\nRespond to the points raised by other panellists. Build on, challenge, or qualify their positions based on your rubric profile. Be concise (1-3 paragraphs).`;
 
   const response = await sendMessage(client, {
     system: systemPrompt,
@@ -67,14 +69,15 @@ export async function generatePersonaResponse(
 export async function generateRoundSummary(
   client: LLMClient,
   topic: string,
-  messages: PanelMessage[]
+  messages: PanelMessage[],
 ): Promise<string> {
   const contributions = messages
     .map((m) => `${m.persona_name}: ${m.content}`)
     .join("\n\n");
 
   const response = await sendMessage(client, {
-    system: "You are a neutral panel moderator summarising a discussion round. Be concise and factual. Use Australian English spelling.",
+    system:
+      "You are a neutral panel moderator summarising a discussion round. Be concise and factual. Use Australian English spelling.",
     messages: [
       {
         role: "user",
@@ -94,7 +97,11 @@ export async function generateRoundSummary(
  */
 function identifyRubricInfluence(persona: LoadedPersona): RubricInfluence {
   const rubric = persona.file.rubric;
-  const scored: { dimension: RubricDimensionName; score: number; note: string }[] = [];
+  const scored: {
+    dimension: RubricDimensionName;
+    score: number;
+    note: string;
+  }[] = [];
 
   for (const dim of RUBRIC_DIMENSIONS) {
     scored.push({
@@ -112,7 +119,7 @@ function identifyRubricInfluence(persona: LoadedPersona): RubricInfluence {
   return {
     dominant_dimensions: dominant.map((d) => d.dimension),
     behaviour_notes: dominant.map(
-      (d) => `${d.dimension} (${d.score}/10): ${d.note}`
+      (d) => `${d.dimension} (${d.score}/10): ${d.note}`,
     ),
   };
 }

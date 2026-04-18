@@ -38,7 +38,7 @@ interface ChatResponse {
 }
 
 export function createOpenAICompatibleProvider(
-  options: OpenAICompatibleOptions = {}
+  options: OpenAICompatibleOptions = {},
 ): LLMProvider {
   const baseUrl = (
     options.baseUrl ?? process.env.PERSONA_X_OAI_BASE_URL
@@ -48,7 +48,7 @@ export function createOpenAICompatibleProvider(
 
   if (!baseUrl) {
     throw new Error(
-      "openai-compatible provider requires PERSONA_X_OAI_BASE_URL"
+      "openai-compatible provider requires PERSONA_X_OAI_BASE_URL",
     );
   }
   if (!model) {
@@ -90,7 +90,7 @@ export function createOpenAICompatibleProvider(
           `OpenAI-compatible request to ${baseUrl} failed: ${err instanceof Error ? err.message : String(err)}`,
           "openai-compatible",
           err,
-          true
+          true,
         );
       }
 
@@ -101,7 +101,7 @@ export function createOpenAICompatibleProvider(
           `OpenAI-compatible endpoint returned ${res.status}: ${text.substring(0, 200)}`,
           "openai-compatible",
           undefined,
-          retryable
+          retryable,
         );
       }
 
@@ -112,7 +112,7 @@ export function createOpenAICompatibleProvider(
           "No content in OpenAI-compatible response",
           "openai-compatible",
           undefined,
-          false
+          false,
         );
       }
 

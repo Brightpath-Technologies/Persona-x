@@ -51,11 +51,11 @@ export interface LLMProvider {
 export class OfflineViolationError extends Error {
   constructor(
     public readonly provider: ProviderName,
-    public readonly target: string
+    public readonly target: string,
   ) {
     super(
       `Offline mode blocked a non-local request from ${provider} to ${target}. ` +
-        `Unset PERSONA_X_OFFLINE or switch to a local provider.`
+        `Unset PERSONA_X_OFFLINE or switch to a local provider.`,
     );
     this.name = "OfflineViolationError";
   }
@@ -66,7 +66,7 @@ export class ProviderRequestError extends Error {
     message: string,
     public readonly provider: ProviderName,
     public readonly cause?: unknown,
-    public readonly retryable: boolean = true
+    public readonly retryable: boolean = true,
   ) {
     super(message);
     this.name = "ProviderRequestError";

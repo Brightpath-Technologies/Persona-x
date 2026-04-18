@@ -26,7 +26,7 @@ describe("section-generation provenance", () => {
         source_signals: [],
         provider: "human",
         model: "n/a",
-      }
+      },
     );
     state = recordPopulation(
       state,
@@ -38,7 +38,7 @@ describe("section-generation provenance", () => {
         source_signals: ["discomfort_triggers"],
         provider: "ollama",
         model: "llama3.1:8b",
-      }
+      },
     );
 
     const provenance = buildSectionGenerationProvenance(state);
@@ -60,14 +60,26 @@ describe("section-generation provenance", () => {
 
   it("defaults missing provider to 'human' for direct_input, 'unknown' otherwise", () => {
     let state = createPipelineState(createDiscoveryState());
-    state = recordPopulation(state, "purpose", "direct_input", {}, {
-      confidence: "high",
-      source_signals: [],
-    });
-    state = recordPopulation(state, "rubric", "inference", {}, {
-      confidence: "low",
-      source_signals: [],
-    });
+    state = recordPopulation(
+      state,
+      "purpose",
+      "direct_input",
+      {},
+      {
+        confidence: "high",
+        source_signals: [],
+      },
+    );
+    state = recordPopulation(
+      state,
+      "rubric",
+      "inference",
+      {},
+      {
+        confidence: "low",
+        source_signals: [],
+      },
+    );
 
     const provenance = buildSectionGenerationProvenance(state);
     expect(provenance[0]!.provider).toBe("human");
@@ -78,22 +90,34 @@ describe("section-generation provenance", () => {
 
   it("stamps an ISO timestamp automatically", () => {
     let state = createPipelineState(createDiscoveryState());
-    state = recordPopulation(state, "purpose", "direct_input", {}, {
-      confidence: "high",
-      source_signals: [],
-    });
+    state = recordPopulation(
+      state,
+      "purpose",
+      "direct_input",
+      {},
+      {
+        confidence: "high",
+        source_signals: [],
+      },
+    );
     const ts = state.records[0]!.timestamp!;
     expect(() => new Date(ts).toISOString()).not.toThrow();
   });
 
   it("output validates against SectionGenerationRecordSchema", () => {
     let state = createPipelineState(createDiscoveryState());
-    state = recordPopulation(state, "rubric", "inference", {}, {
-      confidence: "high",
-      source_signals: ["discomfort_triggers"],
-      provider: "anthropic",
-      model: "claude-sonnet-4-20250514",
-    });
+    state = recordPopulation(
+      state,
+      "rubric",
+      "inference",
+      {},
+      {
+        confidence: "high",
+        source_signals: ["discomfort_triggers"],
+        provider: "anthropic",
+        model: "claude-sonnet-4-20250514",
+      },
+    );
     const provenance = buildSectionGenerationProvenance(state);
     for (const record of provenance) {
       expect(() => SectionGenerationRecordSchema.parse(record)).not.toThrow();

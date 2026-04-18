@@ -44,7 +44,7 @@ export function toDot<N, E>(graph: Graph<N, E>): string {
     if (edge.weight !== undefined) attrs.push(`weight=${edge.weight}`);
     const tail = attrs.length > 0 ? ` [${attrs.join(", ")}]` : "";
     lines.push(
-      `  "${escapeDot(edge.source)}" ${connector} "${escapeDot(edge.target)}"${tail};`
+      `  "${escapeDot(edge.source)}" ${connector} "${escapeDot(edge.target)}"${tail};`,
     );
   }
 

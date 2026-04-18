@@ -23,7 +23,7 @@ import type {
 
 function createTestPersona(
   name: string,
-  interventionScore: number
+  interventionScore: number,
 ): LoadedPersona {
   const file: PersonaFile = {
     metadata: {
@@ -210,7 +210,7 @@ describe("runPanelRound", () => {
     await runPanelRound(provider, session, 1);
 
     const personaCalls = provider.calls.filter(
-      (c) => c.system && c.system.includes("You are Solo")
+      (c) => c.system && c.system.includes("You are Solo"),
     );
     expect(personaCalls.length).toBeGreaterThan(0);
     expect(personaCalls[0]!.cacheSystem).toBe(true);

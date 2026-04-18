@@ -34,7 +34,7 @@ interface OpenAIChatResponse {
 }
 
 export function createOllamaProvider(
-  options: OllamaProviderOptions = {}
+  options: OllamaProviderOptions = {},
 ): LLMProvider {
   const baseUrl = (
     options.baseUrl ??
@@ -75,7 +75,7 @@ export function createOllamaProvider(
           `Ollama request failed (is the daemon running at ${baseUrl}?): ${err instanceof Error ? err.message : String(err)}`,
           "ollama",
           err,
-          true
+          true,
         );
       }
 
@@ -85,7 +85,7 @@ export function createOllamaProvider(
           `Ollama returned ${res.status}: ${text.substring(0, 200)}`,
           "ollama",
           undefined,
-          res.status >= 500 || res.status === 429
+          res.status >= 500 || res.status === 429,
         );
       }
 
@@ -96,7 +96,7 @@ export function createOllamaProvider(
           "No content in Ollama response",
           "ollama",
           undefined,
-          false
+          false,
         );
       }
 

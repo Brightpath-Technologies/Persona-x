@@ -13,9 +13,17 @@ import { writePersonaFile } from "../utils/yaml.js";
 import { formatRubricProfile } from "../engine/rubric/scorer.js";
 import type { PersonaFile } from "../schema/persona.js";
 import { createClient } from "../llm/client.js";
-import { extractSignals, extractPurpose, generateConversationalQuestion } from "../llm/discovery-llm.js";
+import {
+  extractSignals,
+  extractPurpose,
+  generateConversationalQuestion,
+} from "../llm/discovery-llm.js";
 import { generateSection } from "../llm/population-llm.js";
-import { hasSignalSufficiency, getMissingSignals, QUESTION_BANK } from "../engine/discovery/discovery.js";
+import {
+  hasSignalSufficiency,
+  getMissingSignals,
+  QUESTION_BANK,
+} from "../engine/discovery/discovery.js";
 import { evaluateInference } from "../engine/inference/inference.js";
 import { createInterface } from "node:readline/promises";
 
@@ -54,17 +62,15 @@ async function createInteractive(outputPath: string): Promise<void> {
 
   try {
     client = createClient();
-    console.log(
-      `Using provider: ${client.name} (model: ${client.model})\n`
-    );
+    console.log(`Using provider: ${client.name} (model: ${client.model})\n`);
   } catch (err) {
     console.error("Failed to initialise LLM provider.");
     console.error(err instanceof Error ? err.message : String(err));
     console.error(
-      "Set PERSONA_X_PROVIDER (ollama | anthropic | openai-compatible) and the relevant credentials."
+      "Set PERSONA_X_PROVIDER (ollama | anthropic | openai-compatible) and the relevant credentials.",
     );
     console.error(
-      "Use --non-interactive to generate an example persona without any provider.\n"
+      "Use --non-interactive to generate an example persona without any provider.\n",
     );
     rl.close();
     return;
@@ -74,10 +80,14 @@ async function createInteractive(outputPath: string): Promise<void> {
 
   // Phase 1: Discovery
   console.log("═══ DISCOVERY PHASE ═══");
-  console.log("I'll ask a series of questions to understand the persona you want to create.\n");
+  console.log(
+    "I'll ask a series of questions to understand the persona you want to create.\n",
+  );
 
   // Step 1: Get initial purpose
-  const purposeInput = await rl.question("Describe the persona you want to create — what should it do in a panel?\n> ");
+  const purposeInput = await rl.question(
+    "Describe the persona you want to create — what should it do in a panel?\n> ",
+  );
   if (!purposeInput.trim()) {
     console.log("No input provided. Exiting.");
     rl.close();
@@ -99,12 +109,15 @@ async function createInteractive(outputPath: string): Promise<void> {
 
   // Step 2: Ask discovery questions until sufficient
   let questionIndex = 0;
-  while (!hasSignalSufficiency(state.discovery) && questionIndex < QUESTION_BANK.length) {
+  while (
+    !hasSignalSufficiency(state.discovery) &&
+    questionIndex < QUESTION_BANK.length
+  ) {
     const missing = getMissingSignals(state.discovery);
     const nextQuestion = QUESTION_BANK.find(
       (q) =>
         q.targets.some((t) => missing.includes(t)) &&
-        !state.discovery.questions_asked.includes(q.id)
+        !state.discovery.questions_asked.includes(q.id),
     );
 
     if (!nextQuestion) break;
@@ -112,7 +125,11 @@ async function createInteractive(outputPath: string): Promise<void> {
     // Generate a conversational version of the question
     let questionText: string;
     try {
-      questionText = await generateConversationalQuestion(client, nextQuestion, state.discovery);
+      questionText = await generateConversationalQuestion(
+        client,
+        nextQuestion,
+        state.discovery,
+      );
     } catch {
       questionText = nextQuestion.text;
     }
@@ -150,7 +167,9 @@ async function createInteractive(outputPath: string): Promise<void> {
   }
 
   state.discovery.phase = "sufficient";
-  console.log(`\nDiscovery complete. ${state.discovery.signals.length} signal(s) gathered from ${state.discovery.questions_asked.length} question(s).\n`);
+  console.log(
+    `\nDiscovery complete. ${state.discovery.signals.length} signal(s) gathered from ${state.discovery.questions_asked.length} question(s).\n`,
+  );
 
   // Phase 2: Population
   console.log("═══ POPULATION PHASE ═══");
@@ -168,26 +187,45 @@ async function createInteractive(outputPath: string): Promise<void> {
     let userInput: string | undefined;
 
     // For sections that must be asked, prompt the user
-    if (!inference.can_infer && (section === "boundaries" || section === "purpose")) {
-      console.log(`  This section requires your input: ${inference.justification}`);
-      userInput = await rl.question(`  Any specific requirements for ${section}? (press Enter to let the engine decide)\n  > `);
+    if (
+      !inference.can_infer &&
+      (section === "boundaries" || section === "purpose")
+    ) {
+      console.log(
+        `  This section requires your input: ${inference.justification}`,
+      );
+      userInput = await rl.question(
+        `  Any specific requirements for ${section}? (press Enter to let the engine decide)\n  > `,
+      );
       if (!userInput.trim()) userInput = undefined;
     }
 
     try {
-      const sectionData = await generateSection(client, section, state.pipeline, userInput);
+      const sectionData = await generateSection(
+        client,
+        section,
+        state.pipeline,
+        userInput,
+      );
 
       // Handle optional sections which return multiple sub-sections
-      if (section === "optional" && typeof sectionData === "object" && sectionData !== null) {
+      if (
+        section === "optional" &&
+        typeof sectionData === "object" &&
+        sectionData !== null
+      ) {
         const optionalData = sectionData as Record<string, unknown>;
         if (optionalData.communication) {
-          state.pipeline.partial_persona.communication = optionalData.communication as PersonaFile["communication"];
+          state.pipeline.partial_persona.communication =
+            optionalData.communication as PersonaFile["communication"];
         }
         if (optionalData.invocation) {
-          state.pipeline.partial_persona.invocation = optionalData.invocation as PersonaFile["invocation"];
+          state.pipeline.partial_persona.invocation =
+            optionalData.invocation as PersonaFile["invocation"];
         }
         if (optionalData.bio) {
-          state.pipeline.partial_persona.bio = optionalData.bio as PersonaFile["bio"];
+          state.pipeline.partial_persona.bio =
+            optionalData.bio as PersonaFile["bio"];
         }
       }
 
@@ -199,8 +237,10 @@ async function createInteractive(outputPath: string): Promise<void> {
         {
           confidence: inference.confidence,
           source_signals: inference.supporting_signals.map((s) => s.signal),
-          inference_justification: inference.can_infer ? inference.justification : undefined,
-        }
+          inference_justification: inference.can_infer
+            ? inference.justification
+            : undefined,
+        },
       );
 
       state.pipeline = advanceSection(state.pipeline);
@@ -219,7 +259,14 @@ async function createInteractive(outputPath: string): Promise<void> {
   state = transitionToReview(state);
 
   const partial = state.pipeline?.partial_persona;
-  if (!partial?.purpose || !partial?.panel_role || !partial?.rubric || !partial?.reasoning || !partial?.interaction || !partial?.boundaries) {
+  if (
+    !partial?.purpose ||
+    !partial?.panel_role ||
+    !partial?.rubric ||
+    !partial?.reasoning ||
+    !partial?.interaction ||
+    !partial?.boundaries
+  ) {
     console.error("Persona generation incomplete — missing required sections.");
     console.log("Use 'persona-x refine' to complete the missing sections.\n");
     rl.close();
@@ -244,7 +291,8 @@ async function createInteractive(outputPath: string): Promise<void> {
     purpose: partial.purpose,
     bio: partial.bio ?? {
       background: "Generated by Persona-x interactive creation flow.",
-      perspective_origin: "Perspective shaped by discovery signals gathered during creation.",
+      perspective_origin:
+        "Perspective shaped by discovery signals gathered during creation.",
     },
     panel_role: partial.panel_role,
     rubric: partial.rubric,
@@ -280,7 +328,9 @@ async function createInteractive(outputPath: string): Promise<void> {
   console.log(`Persona: ${persona.metadata.name}`);
   console.log(`Version: ${persona.metadata.version}`);
   console.log(`\nUse 'persona-x validate ${outputPath}' to verify the file.`);
-  console.log(`Use 'persona-x refine ${outputPath}' to make targeted adjustments.`);
+  console.log(
+    `Use 'persona-x refine ${outputPath}' to make targeted adjustments.`,
+  );
 
   rl.close();
 }
@@ -393,7 +443,8 @@ async function createNonInteractive(outputPath: string): Promise<void> {
     },
     communication: {
       clarity_vs_brevity: "clarity",
-      structure_preference: "Structured — uses numbered points for findings and recommendations",
+      structure_preference:
+        "Structured — uses numbered points for findings and recommendations",
       tone_markers: ["measured", "direct", "clinical"],
     },
     boundaries: {
@@ -445,12 +496,26 @@ async function createNonInteractive(outputPath: string): Promise<void> {
   console.log(`Type: ${persona.metadata.type}`);
   console.log(`Version: ${persona.metadata.version}`);
   console.log(`\nRubric summary:`);
-  console.log(`  Risk Appetite:           ${persona.rubric.risk_appetite.score}/10`);
-  console.log(`  Evidence Threshold:      ${persona.rubric.evidence_threshold.score}/10`);
-  console.log(`  Tolerance for Ambiguity: ${persona.rubric.tolerance_for_ambiguity.score}/10`);
-  console.log(`  Intervention Frequency:  ${persona.rubric.intervention_frequency.score}/10`);
-  console.log(`  Escalation Bias:         ${persona.rubric.escalation_bias.score}/10`);
-  console.log(`  Delivery vs Rigour:      ${persona.rubric.delivery_vs_rigour_bias.score}/10`);
+  console.log(
+    `  Risk Appetite:           ${persona.rubric.risk_appetite.score}/10`,
+  );
+  console.log(
+    `  Evidence Threshold:      ${persona.rubric.evidence_threshold.score}/10`,
+  );
+  console.log(
+    `  Tolerance for Ambiguity: ${persona.rubric.tolerance_for_ambiguity.score}/10`,
+  );
+  console.log(
+    `  Intervention Frequency:  ${persona.rubric.intervention_frequency.score}/10`,
+  );
+  console.log(
+    `  Escalation Bias:         ${persona.rubric.escalation_bias.score}/10`,
+  );
+  console.log(
+    `  Delivery vs Rigour:      ${persona.rubric.delivery_vs_rigour_bias.score}/10`,
+  );
   console.log(`\nUse 'persona-x validate ${outputPath}' to verify the file.`);
-  console.log(`Use 'persona-x refine ${outputPath}' to make targeted adjustments.`);
+  console.log(
+    `Use 'persona-x refine ${outputPath}' to make targeted adjustments.`,
+  );
 }
