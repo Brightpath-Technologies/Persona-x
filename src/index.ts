@@ -141,6 +141,8 @@ export {
   createPanelSession,
   determineSpeakingOrder,
   shouldPersonaContribute,
+  runPanelRound,
+  runPanel,
   formatPanelDiscussion,
 } from "./runtime/panel.js";
 

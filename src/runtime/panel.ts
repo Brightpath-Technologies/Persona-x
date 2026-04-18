@@ -1,9 +1,15 @@
 import type {
   LoadedPersona,
   PanelConfig,
+  PanelMessage,
   PanelRound,
 } from "./interface.js";
 import { generatePersonaSystemPrompt } from "./interface.js";
+import type { LLMClient } from "../llm/client.js";
+import {
+  generatePersonaResponse,
+  generateRoundSummary,
+} from "../llm/panel-llm.js";
 
 /**
  * Panel Simulator
@@ -91,6 +97,70 @@ export function getPersonaPrompt(
   personaId: string
 ): string | undefined {
   return session.system_prompts.get(personaId);
+}
+
+/**
+ * Execute one round of the panel discussion.
+ *
+ * Iterates personas in speaking order, calls the LLM for each persona that
+ * should contribute this round, then generates a synthesising round summary.
+ * Mutates the session in place and returns the completed round.
+ */
+export async function runPanelRound(
+  client: LLMClient,
+  session: PanelSession,
+  roundNumber: number
+): Promise<PanelRound> {
+  const order = determineSpeakingOrder(session.config.personas);
+  const messages: PanelMessage[] = [];
+
+  for (const persona of order) {
+    if (!persona.active) continue;
+    if (
+      !shouldPersonaContribute(persona, roundNumber, session.config.max_rounds)
+    ) {
+      continue;
+    }
+
+    const message = await generatePersonaResponse(
+      client,
+      session,
+      persona,
+      roundNumber,
+      messages
+    );
+    messages.push(message);
+  }
+
+  const summary =
+    messages.length > 0
+      ? await generateRoundSummary(client, session.config.topic, messages)
+      : "No contributions this round.";
+
+  const round: PanelRound = {
+    round_number: roundNumber,
+    messages,
+    summary,
+  };
+
+  session.rounds.push(round);
+  session.current_round = roundNumber;
+  return round;
+}
+
+/**
+ * Run the full panel until max_rounds is reached or every persona has
+ * gone silent for a round. Returns the completed session.
+ */
+export async function runPanel(
+  client: LLMClient,
+  session: PanelSession
+): Promise<PanelSession> {
+  for (let round = 1; round <= session.config.max_rounds; round++) {
+    const result = await runPanelRound(client, session, round);
+    if (result.messages.length === 0) break;
+  }
+  return session;
 }
 
 /**
