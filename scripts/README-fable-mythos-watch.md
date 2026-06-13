@@ -1,15 +1,15 @@
 # Newsroom Watch — Fable/Mythos Export Control + AI
 
 A small launchd-driven "newsroom" that polls the web for significant news on a
-few beats, dedupes against local state, and publishes a **Morning** and
-**Afternoon** edition — each dropped into Google Drive with a macOS
+few beats, dedupes against local state, and publishes **Morning**, **Afternoon**,
+and **Final** editions (like a traditional newspaper) — each dropped into Google Drive with a macOS
 notification. It also regenerates a self-contained **dashboard**
 (`Newsroom Watch — Dashboard.html`) in the same Drive folder, showing each
 beat, every edition, and the releases published. A rolling Obsidian digest of
 everything seen is also kept.
 
 Only items published within the last **3 days** are reported (configurable via
-`MAX_AGE_DAYS`) — tuned for the twice-daily cadence so editions stay fresh.
+`MAX_AGE_DAYS`) — tuned for a three-edition day so editions stay fresh.
 
 > For a non-technical, team-shareable overview of the approach, see
 > [`docs/NEWSROOM-WATCH-EXECUTIVE-SUMMARY.md`](../docs/NEWSROOM-WATCH-EXECUTIVE-SUMMARY.md).
@@ -126,9 +126,10 @@ launchd's own stdout/stderr land in `/tmp/fable-mythos-watch.{out,err}.log`.
 All of these are environment variables with sensible defaults — set them in the
 plist's `EnvironmentVariables` or inline when testing.
 
-- **Editions / schedule:** the plist fires at 07:00 (Morning) and 15:00
-  (Afternoon) via `StartCalendarInterval`; the script names the edition from the
-  clock (before noon = Morning). Change the hours in the plist to retime them.
+- **Editions / schedule:** the plist fires at 07:00 (Morning), 13:00 (Afternoon),
+  and 19:00 (Final) via `StartCalendarInterval`; the script names the edition from
+  the clock (before noon = Morning, noon–18:00 = Afternoon, 18:00+ = Final).
+  Change the hours in the plist to retime them.
 - **Quiet days:** `PUBLISH_EMPTY` (default `true`) publishes an edition even with
   no new items; set `false` to stay silent on a slow news cycle.
 - **Model / token cost:** `REPORTER_MODEL` (default `sonnet` for well-grounded,

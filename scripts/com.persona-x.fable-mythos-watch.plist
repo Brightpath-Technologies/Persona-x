@@ -15,9 +15,11 @@
         <string>/REPLACE/WITH/ABSOLUTE/PATH/scripts/fable-mythos-watch.sh</string>
     </array>
 
-    <!-- Twice-daily editions: 07:00 (Morning) and 15:00 (Afternoon) local time.
-         The script derives the edition name from the clock, so these two times
-         produce the Morning and Afternoon papers. Adjust the hours to taste. -->
+    <!-- Three editions a day, like a traditional paper: 07:00 (Morning),
+         13:00 (Afternoon), and 19:00 (Final) local time. The script derives the
+         edition name from the clock (before noon = Morning, noon–18:00 =
+         Afternoon, 18:00+ = Final), so these three times produce the three
+         papers. Adjust the hours to taste. -->
     <key>StartCalendarInterval</key>
     <array>
         <dict>
@@ -28,7 +30,13 @@
         </dict>
         <dict>
             <key>Hour</key>
-            <integer>15</integer>
+            <integer>13</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>19</integer>
             <key>Minute</key>
             <integer>0</integer>
         </dict>

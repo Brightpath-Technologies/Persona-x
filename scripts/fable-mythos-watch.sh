@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 # fable-mythos-watch.sh
-# A source-checked "newsroom" watcher that publishes twice-daily editions and a
-# live HTML dashboard.
+# A source-checked "newsroom" watcher that publishes Morning, Afternoon, and
+# Final editions (like a traditional newspaper) plus a live HTML dashboard.
 #
 # Several reporter "desks" run in parallel, each as its own headless Claude Code
 # process (a separate sub-agent context). A pure-jq "wire editor" collates every
@@ -10,7 +10,7 @@
 # floor, and orders official releases and higher-significance items first.
 #
 # Each run:
-#   - publishes an EDITION (Morning or Afternoon) as Markdown to Google Drive,
+#   - publishes an EDITION (Morning, Afternoon, or Final) as Markdown to Google Drive,
 #   - regenerates a Dashboard.html (beats, editions, releases) in the same place,
 #   - appends to a rolling Obsidian digest, and
 #   - fires a macOS notification.
@@ -22,7 +22,8 @@
 # Add a desk: write a *_PROMPT, add a name to BEAT_NAMES, add a run_desk line,
 # and add its file to the collation. The dashboard picks it up automatically.
 #
-# Designed to run twice daily via launchd (see com.persona-x.fable-mythos-watch.plist).
+# Designed to run three times daily (Morning, Afternoon, Final) via launchd
+# (see com.persona-x.fable-mythos-watch.plist).
 # Uses your existing Claude Code authentication. No API key needed.
 
 set -euo pipefail
@@ -55,7 +56,7 @@ DESK_MAX_ITEMS="${DESK_MAX_ITEMS:-6}"
 # Editor (pure jq) settings.
 MAX_ITEMS="${MAX_ITEMS:-12}"                          # cap after collation
 SIGNIFICANCE_FLOOR="${SIGNIFICANCE_FLOOR:-medium}"    # drop below this: low|medium|high
-MAX_AGE_DAYS="${MAX_AGE_DAYS:-3}"                     # drop items published more than this many days ago (twice-daily cadence)
+MAX_AGE_DAYS="${MAX_AGE_DAYS:-3}"                     # drop items published more than this many days ago (suits a 3-edition day)
 
 # Publish an edition even on a quiet news cycle (true), or stay silent (false).
 PUBLISH_EMPTY="${PUBLISH_EMPTY:-true}"
@@ -83,10 +84,15 @@ mkdir -p "$(dirname "${OBSIDIAN_NOTE}")"
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S')  $*" >> "${LOG_FILE}"; }
 
 # Which edition is this? Derived from the clock unless EDITION is set.
+# Traditional cadence: Morning (before noon), Afternoon (noon–18:00), Final (18:00+).
 DATE="$(date '+%Y-%m-%d')"
 DATE_LONG="$(date '+%A, %d %B %Y')"
 if [ -z "${EDITION:-}" ]; then
-  if [ "$((10#$(date '+%H')))" -lt 12 ]; then EDITION="Morning"; else EDITION="Afternoon"; fi
+  H="$((10#$(date '+%H')))"
+  if [ "${H}" -lt 12 ]; then EDITION="Morning"
+  elif [ "${H}" -lt 18 ]; then EDITION="Afternoon"
+  else EDITION="Final"
+  fi
 fi
 
 log "run started (${EDITION} edition, model=${REPORTER_MODEL}, floor=${SIGNIFICANCE_FLOOR})"
