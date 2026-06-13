@@ -15,7 +15,7 @@ sub-agent / specialist role).
 ## What Newsroom Watch is
 
 A small, low-cost service that watches the topics I choose ("beats"), curates
-only what's significant (with sources), and delivers a twice-daily briefing plus
+only what's significant (with sources), and delivers Morning/Afternoon/Final editions plus
 a live dashboard — **assembled and signed off by a human, never auto-published.**
 It is modelled on an old newsroom: independent reporter "desks" gather news; a
 deterministic editor curates; a human writes the final word.
@@ -28,8 +28,8 @@ source):
 - `scripts/fable-mythos-watch.sh` — the working watcher (parallel headless
   Claude Code "desks" + a pure-jq "wire editor"; publishes editions + an HTML
   dashboard; keeps run history).
-- `scripts/com.persona-x.fable-mythos-watch.plist` — launchd schedule (twice
-  daily).
+- `scripts/com.persona-x.fable-mythos-watch.plist` — launchd schedule (three
+  times daily: Morning, Afternoon, Final).
 - `scripts/README-fable-mythos-watch.md` — setup & config.
 - `docs/NEWSROOM-WATCH-EXECUTIVE-SUMMARY.md`
 - `docs/NEWSROOM-WATCH-BRD.md`

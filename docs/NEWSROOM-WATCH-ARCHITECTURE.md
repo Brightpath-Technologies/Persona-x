@@ -22,7 +22,7 @@ work is confined to the desks; all curation is plain data processing.
 ## 2. Architecture diagram
 
 ```
-                         launchd (07:00, 15:00)  ┐
+                       launchd (07:00, 13:00, 19:00) ┐
                                                   ▼
                             fable-mythos-watch.sh (orchestrator)
                                                   │
@@ -48,8 +48,8 @@ work is confined to the desks; all curation is plain data processing.
 ## 3. Components
 
 ### 3.1 Orchestrator (`scripts/fable-mythos-watch.sh`)
-Bash script run by launchd. Determines the edition (Morning/Afternoon from the
-clock), launches the desks in parallel, runs the editor, publishes outputs,
+Bash script run by launchd. Determines the edition (Morning/Afternoon/Final from
+the clock), launches the desks in parallel, runs the editor, publishes outputs,
 records history, and regenerates the dashboard. Fails safe: a broken desk
 yields an empty filing rather than aborting the run.
 
@@ -118,8 +118,8 @@ reproducible.
 ```
 
 ## 5. Scheduling & deployment
-- **launchd** agent (`com.persona-x.fable-mythos-watch.plist`) runs at 07:00 and
-  15:00 local via `StartCalendarInterval`, plus once at load.
+- **launchd** agent (`com.persona-x.fable-mythos-watch.plist`) runs at 07:00,
+  13:00, and 19:00 local via `StartCalendarInterval`, plus once at load.
 - Auth via the operator's existing Claude Code login (no separate API key).
 - Explicit `PATH` set in the agent (launchd does not inherit the login shell).
 

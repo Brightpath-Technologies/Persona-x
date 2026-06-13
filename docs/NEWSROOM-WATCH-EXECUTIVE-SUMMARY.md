@@ -1,20 +1,20 @@
 # Newsroom Watch — Executive Summary
 
-*A lightweight, low-cost intelligence service that publishes a twice-daily
-briefing on the topics we care about.*
+*A lightweight, low-cost intelligence service that publishes Morning,
+Afternoon, and Final editions on the topics we care about.*
 
 ## What it is
 
 Newsroom Watch is a small automation that monitors the web for **significant**
 developments on a defined set of topics ("beats"), curates them, and publishes a
-**Morning** and **Afternoon** edition — each delivered to Google Drive with a
+**Morning**, **Afternoon**, and **Final** edition — each delivered to Google Drive with a
 desktop notification. It runs unattended on a single machine and reuses existing
 Claude Code access, so there is no new vendor, API key, or per-seat licence to
 procure.
 
 Think of it as a private wire service: instead of everyone scanning the news, a
 small team of automated "reporters" does the first pass and an "editor" hands us
-a short, ranked briefing twice a day.
+a short, ranked briefing three times a day.
 
 ## Why this approach
 
@@ -28,7 +28,7 @@ The design borrows the structure of an old-fashioned newsroom, deliberately:
   it removes anything already reported, drops items below a significance
   threshold, removes duplicates, and ranks what remains (official announcements
   and high-impact items first).
-- **Editions, not a firehose.** Output is batched into two scheduled editions a
+- **Editions, not a firehose.** Output is batched into three scheduled editions a
   day rather than a constant stream of alerts — enough to stay current, not
   enough to create noise.
 
@@ -49,7 +49,7 @@ Cost is controlled by design, not by luck:
 The net effect: adding another beat adds one more small, bounded task — not a
 larger, more expensive job. Spend scales gently and predictably.
 
-## What we get, twice a day
+## What we get, three times a day
 
 Each edition is a short Markdown briefing, grouped by beat. Every item carries:
 
@@ -108,6 +108,6 @@ never *authorship*.
 
 ## In one line
 
-A private, twice-daily wire service for our key AI topics — newsroom-quality
+A private, three-times-daily wire service for our key AI topics — newsroom-quality
 curation, deliberately engineered to run at minimal cost and **always assembled
 by a human creative** — delivered straight to Google Drive.

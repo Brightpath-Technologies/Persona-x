@@ -20,8 +20,8 @@ into HeyGen; keep captions on (most feeds autoplay muted). Suggested vertical
 ### Cutdown 1 — Hook
 > **SCRIPT**
 > Imagine an entire newsroom… in your pocket. Reporters that never sleep. An
-> editor that cuts the noise. And you — still holding the pen. Twice a day, only
-> what matters. We're building it — and it changes how you stay informed.
+> editor that cuts the noise. And you — still holding the pen. Three times a day,
+> only what matters. We're building it — and it changes how you stay informed.
 
 ### Cutdown 2 — "Human AND"
 > **SCRIPT**
@@ -32,7 +32,7 @@ into HeyGen; keep captions on (most feeds autoplay muted). Suggested vertical
 ### Cutdown 3 — Team / efficiency
 > **SCRIPT**
 > How many hours a week do you lose just staying current? What if a short,
-> sourced briefing just… arrived. Twice a day. Only what matters. Same budget,
+> sourced briefing just… arrived. Three times a day. Only what matters. Same budget,
 > half the busywork — and more time to actually think.
 
 ### Cutdown 4 — Use case: charity campaigns
@@ -74,7 +74,7 @@ always writes the final word.
 
 **What it is**
 A small, low-cost service that watches the topics you choose, curates only what's
-significant (with sources), and delivers a twice-daily briefing plus a live
+significant (with sources), and delivers Morning/Afternoon/Final editions plus a live
 dashboard — assembled by a human, never auto-published.
 
 **How it works (30 seconds)**

@@ -17,7 +17,7 @@
 This document defines the business requirements for **Newsroom Watch**, an
 automated intelligence service that monitors the web for significant
 developments on a defined set of topics ("beats"), curates them with explicit
-significance ratings, and publishes a twice-daily briefing plus a live
+significance ratings, and publishes Morning/Afternoon/Final editions plus a live
 dashboard to Google Drive.
 
 It exists so the team can stay current on fast-moving AI policy and competitor
@@ -42,7 +42,7 @@ ones that will guide its evolution into a team-grade service.
 
 | # | Objective | Success measure |
 |---|---|---|
-| O1 | Stay current on defined beats with minimal manual effort | Two editions/day delivered on schedule with no manual steps |
+| O1 | Stay current on defined beats with minimal manual effort | Three editions/day (Morning, Afternoon, Final) delivered on schedule with no manual steps |
 | O2 | Surface only what matters | ≥ 80% of published items rated useful by readers; routine noise excluded |
 | O3 | Be trustworthy | 0 fabricated items/links published; every item cites a real source |
 | O4 | Be cheap to run | Per-run model spend bounded and predictable; editing stage is zero-cost |
@@ -65,7 +65,7 @@ ones that will guide its evolution into a team-grade service.
 - Parallel "reporter" agents per beat; deterministic editorial curation.
 - Significance rating (high/medium/low) and official-release flagging.
 - Recency window (default 3 days) and de-duplication against prior runs.
-- Twice-daily Markdown editions + a regenerated HTML dashboard to Google Drive.
+- Three editions a day (Morning, Afternoon, Final) as Markdown + a regenerated HTML dashboard to Google Drive.
 - A rolling local digest (Obsidian) and a desktop notification.
 
 ### Out of scope (current)
@@ -90,7 +90,7 @@ ones that will guide its evolution into a team-grade service.
 | FR5 | The system shall de-duplicate against previously published items. | Must |
 | FR6 | The system shall drop items below a configurable significance floor (default "medium"). | Must |
 | FR7 | The system shall order results with official releases and higher-significance items first. | Must |
-| FR8 | The system shall publish a Morning and an Afternoon edition each day, grouped by beat. | Must |
+| FR8 | The system shall publish Morning, Afternoon, and Final editions each day, grouped by beat. | Must |
 | FR9 | The system shall deliver editions and a status dashboard to Google Drive. | Must |
 | FR10 | The system shall maintain a run history sufficient to render the dashboard (beats run, items filed vs published, editions). | Must |
 | FR11 | The system shall publish an edition even on a quiet news cycle (configurable). | Should |
@@ -137,7 +137,7 @@ ones that will guide its evolution into a team-grade service.
 | Quiet beats look "broken" | Confusion | Publish-empty editions with an explicit note |
 
 ## 12. Acceptance criteria
-- Two editions/day are produced on schedule and delivered to Drive.
+- Three editions/day are produced on schedule and delivered to Drive.
 - Every published item has a working source link and a significance rating.
 - No item older than the configured window appears.
 - A reader can open the dashboard and see, at a glance, beats covered, editions
@@ -214,6 +214,6 @@ values. New roles inherit these; they are not optional.
 - **Desk / reporter** — the independent agent that researches one beat.
 - **Wire editor** — the deterministic step that collates, filters, de-dupes,
   rates, and orders items.
-- **Edition** — a scheduled briefing (Morning/Afternoon).
+- **Edition** — a scheduled briefing (Morning, Afternoon, or Final).
 - **Official release** — an item published by the organisation the story is about.
 - **Significance** — high/medium/low materiality rating.

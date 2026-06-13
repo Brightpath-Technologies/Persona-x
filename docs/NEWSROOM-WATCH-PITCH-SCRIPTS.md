@@ -54,7 +54,7 @@ a flood of headlines narrowing to a short, clean briefing.
 > So we built a team of digital reporters. Each one watches a specific beat.
 > They search, they gather, and they bring back only what's significant — with
 > the source attached, every time. Then a single editor cuts the duplicates and
-> the fluff, and hands you a short, ranked briefing. Twice a day.
+> the fluff, and hands you a short, ranked briefing. Three times a day.
 >
 > And here's the most important part: it never publishes on its own. A human
 > always writes the final word. The machine does the legwork. You bring the
@@ -126,7 +126,7 @@ a flood of headlines narrowing to a short, clean briefing.
 > Tracking what our competitors are doing. Watching the policy landscape shift
 > under our feet.
 >
-> What if that just… arrived? Twice a day, a short briefing — only the
+> What if that just… arrived? Three times a day, a short briefing — only the
 > significant stuff, every item sourced, ranked by what matters. A live
 > dashboard so anyone can see what's moving across every topic we care about.
 >

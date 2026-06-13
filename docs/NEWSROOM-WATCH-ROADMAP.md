@@ -18,7 +18,7 @@ A working single-host prototype:
 - Two beats (Fable/Mythos export control; PwC Canada & competitors AI).
 - Parallel reporter desks (headless Claude Code, `sonnet` default) + pure-jq editor.
 - Significance floor, 3-day recency window, URL de-dup, official-first ordering.
-- Twice-daily Markdown editions + regenerated HTML dashboard to Google Drive;
+- Three editions a day (Morning, Afternoon, Final) + regenerated HTML dashboard to Google Drive;
   rolling Obsidian digest; desktop notification.
 - Run history in `history.jsonl`.
 
@@ -212,7 +212,7 @@ automated oversight (not automated publishing) is how we scale trust.
 - Per-beat recency + automated source verification in place.
 - At least one specialist sub-agent type (research, sourcing, or news-hound)
   in pilot.
-- Centrally hosted; editions reliably delivered twice daily without a laptop.
+- Centrally hosted; editions reliably delivered three times a day without a laptop.
 - Beats managed as configuration; a shareable dashboard for the team.
 
 ## 9. Values & ethical principles (shared by every role)
