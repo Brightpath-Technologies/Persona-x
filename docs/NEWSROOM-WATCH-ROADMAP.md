@@ -4,7 +4,7 @@
 |---|---|
 | **Document** | Evolution Roadmap & Backlog |
 | **Product** | Newsroom Watch |
-| **Version** | 0.1 (draft) |
+| **Version** | 0.2 (draft) |
 | **Owner** | victorycross@gmail.com (Brightpath Technologies) |
 | **Status** | Draft — for review |
 | **Last updated** | 13 June 2026 |
@@ -23,10 +23,12 @@ A working single-host prototype:
 - Run history in `history.jsonl`.
 
 ## 2. Guiding principles
-1. **Trust before reach** — never trade source-integrity for more coverage.
-2. **Cheap by design** — keep curation model-free; bound desk spend.
-3. **Localised change** — beats and tuning evolve without touching the editor.
-4. **Inspectable** — every decision (significance, recency, dedup) is explicit.
+1. **Human at the helm** — the service assists a human creative; it does not
+   publish autonomously (see §6).
+2. **Trust before reach** — never trade source-integrity for more coverage.
+3. **Cheap by design** — keep curation model-free; bound desk spend.
+4. **Localised change** — beats and tuning evolve without touching the editor.
+5. **Inspectable** — every decision (significance, recency, dedup) is explicit.
 
 ## 3. Roadmap
 
@@ -41,6 +43,7 @@ A working single-host prototype:
 ### Mid-term
 | Item | Why |
 |---|---|
+| **Specialist sub-agent roster** (see §5) | Deeper, authoritative research; live human sources; proactive story discovery |
 | **Central hosting** (cron/CI/container) | Remove single-host fragility; reliable editions when the laptop is asleep |
 | **Additional delivery channels** | Email and/or Slack/Teams digest alongside Drive |
 | **Web-hosted dashboard** | Shareable link with history, filters by beat/significance |
@@ -50,10 +53,10 @@ A working single-host prototype:
 ### Long-term
 | Item | Why |
 |---|---|
+| **Second-line QA by Anthropic Fable managed agents** (see §6) | Automated oversight of agent behaviour so the human creative need not be technical |
 | **Trend & theme summaries** | Weekly roll-ups across beats, not just item lists |
 | **Multi-user / access control** | Team-wide service with roles |
 | **Analytics** | Volume/significance trends per beat over time |
-| **Non-English sources** | Broaden coverage with translation |
 | **Feedback loop** | Reader "useful/not useful" signal to tune the significance bar |
 
 ## 4. Backlog (unscheduled ideas)
@@ -63,16 +66,99 @@ A working single-host prototype:
 - Auto-link related items across editions (story timelines).
 - Cost dashboard (tokens/run, per beat).
 - Retry/backoff for transient search failures.
-- Configurable significance rubric per beat.
+- Non-English sources with translation.
 
-## 5. Open questions
+## 5. Future capability — the specialist sub-agent roster
+
+The newsroom grows from two general "reporter desks" into a roster of
+**specialist sub-agents**, each a distinct, configurable role. All of them feed
+the same deterministic editor and, ultimately, the human creative (§6).
+
+### 5.1 Research specialists (by domain)
+Sub-agents defined by an **area of specialisation** — e.g. architecture,
+cybersecurity, entertainment, law, healthcare, finance — rather than a single
+news beat.
+
+- **Purpose:** go beyond headline coverage to gather deeper, authoritative
+  material on a topic.
+- **Sources:** weighted toward authoritative origins — research papers and
+  pre-print servers, standards bodies, libraries and archives, official
+  registries, primary documents — not just news outlets.
+- **Behaviour:** each specialist carries a source-quality rubric for its domain,
+  cites primary sources, and distinguishes peer-reviewed / official material
+  from secondary commentary.
+- **Considerations:** access to gated/academic sources; citation fidelity;
+  domain-appropriate significance criteria; respecting licences and paywalls.
+
+### 5.2 Sourcing specialists (human sources & outreach)
+Sub-agents that **maintain a current list of human sources** — experts,
+insiders, spokespeople, analysts — who can be approached for genuine,
+attributable commentary on a story.
+
+- **Purpose:** add real human voices to a story, not just secondary reporting.
+- **Capabilities:** keep an up-to-date contact roster per topic (who, expertise,
+  relationship, preferred channel, consent status); **draft tailored outreach**
+  to the right person for a given story.
+- **Channels:** email and text, and — only where circumstances and explicit
+  permission allow — **virtual voice** outreach.
+- **Guardrails (essential):** outreach is **drafted for human approval, not sent
+  autonomously** by default; respect consent, do-not-contact lists, channel
+  permissions, frequency limits, and applicable communications/privacy law;
+  full audit trail of who was contacted, how, and why.
+
+### 5.3 News-hound agents (proactive story discovery)
+Sub-agents that **proactively seek out big stories that may become bigger** —
+so a news cycle need not be kicked off manually for a topic.
+
+- **Purpose:** spot early signals and rising stories before they peak.
+- **Behaviour:** scan continuously/periodically for emerging, fast-moving, or
+  under-reported items on watched topics; estimate "momentum" (likelihood a
+  story grows) and surface candidates to the editor and the human creative.
+- **Output:** suggested new threads/beats and early alerts — proposals for
+  human attention, not auto-published stories.
+- **Considerations:** momentum scoring; avoiding hype/false positives; tunable
+  sensitivity; tie-in to the per-beat significance bar.
+
+## 6. Operating principle — the newsroom in your pocket (human-in-the-loop)
+
+**The entire "newsroom in your pocket" is explicitly *not* intended for fully
+autonomous publication of material online.** A human writer assembles the
+agents' work into a finished piece and delivers a compelling message. This is a
+deliberate design choice, not a limitation.
+
+- **Elevate the human creative, remove the mundane.** Agents and specialists do
+  the legwork — research, sourcing, monitoring, collation — so the human focuses
+  on judgement, narrative, and message. The service raises the value of the
+  human creative rather than replacing them.
+- **Human review is the quality gate.** The human creative reviews the work of
+  all sub-agents and specialists before anything is published, so quality and
+  integrity are always maintained. Nothing reaches an audience unreviewed.
+- **Integrity is the product.** Because a human always assembles and signs off
+  the final message, the service's credibility is preserved — agents inform, the
+  human decides and authors.
+- **Future: second-line QA by Anthropic Fable managed agents.** A future layer
+  of Anthropic Fable managed agents performs **second-line quality checks on all
+  agent behaviours and activities** — verifying sourcing, flagging anomalies,
+  and auditing agent conduct — so that the human creative does **not** need to be
+  technically savvy to trust the pipeline. This automates the *oversight* of the
+  agents while keeping *editorial authorship* firmly human.
+
+This principle governs the whole roadmap: new agent types (§5) expand what the
+newsroom can gather and draft, but the **publish** step remains human, and
+automated oversight (not automated publishing) is how we scale trust.
+
+## 7. Open questions
 - Hosting target for central runs (CI runner, small VM, container schedule)?
 - Preferred team delivery channel (email vs Slack/Teams vs Drive-only)?
 - Should the significance bar differ per beat?
-- Retention policy for editions and history?
+- For sourcing specialists: consent capture, contact-data storage, and the
+  approval workflow for outreach (and any voice channel) — what are the rules?
+- Retention policy for editions, history, and source contact data?
 
-## 6. Definition of "v1.0"
+## 8. Definition of "v1.0"
+- Human-in-the-loop review gate formalised; no autonomous publication.
 - Per-beat recency + automated source verification in place.
+- At least one specialist sub-agent type (research, sourcing, or news-hound)
+  in pilot.
 - Centrally hosted; editions reliably delivered twice daily without a laptop.
-- Beats managed as configuration.
-- A shareable dashboard the team can open without file access.
+- Beats managed as configuration; a shareable dashboard for the team.

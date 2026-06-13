@@ -4,7 +4,7 @@
 |---|---|
 | **Document** | Solution / Technical Architecture |
 | **Product** | Newsroom Watch |
-| **Version** | 0.1 (draft) |
+| **Version** | 0.2 (draft) |
 | **Owner** | victorycross@gmail.com (Brightpath Technologies) |
 | **Status** | Draft — for review |
 | **Last updated** | 13 June 2026 |
@@ -169,3 +169,48 @@ reproducible.
 ## 12. Extensibility
 Add a beat by adding a `*_PROMPT`, a `BEAT_NAMES` entry, a `run_desk` call, and
 its file in the collation — the editor and dashboard pick it up unchanged.
+
+## 13. Future agent roster (planned)
+
+The current "reporter desk" is the first of several sub-agent **roles**. All
+roles file into the same deterministic editor and, ultimately, the human
+creative (§14). Roles are configurable and isolated, consistent with the
+"add a role = add a process" model.
+
+| Role | Purpose | Sources / channels | Output |
+|---|---|---|---|
+| **Reporter desk** (current) | News coverage per beat | Public web search | Ranked items |
+| **Research specialist** (by domain: architecture, cybersecurity, entertainment, …) | Deeper, authoritative material | Research papers, libraries, standards bodies, primary documents | Cited, primary-source briefs |
+| **Sourcing specialist** | Maintain live human-source roster; draft outreach | Contact roster; drafts via email/text/(permitted) virtual voice | Outreach drafts for human approval + contact log |
+| **News-hound** | Proactively detect rising stories | Continuous/periodic scanning + momentum scoring | Early-signal candidates / suggested beats |
+
+Architectural notes:
+- **Research specialists** carry a domain source-quality rubric and prioritise
+  primary/peer-reviewed material; must respect licences and paywalls.
+- **Sourcing specialists** introduce a **contacts store** (who, expertise,
+  channel, consent status) and an **outreach-draft** artefact. Sending is
+  gated on human approval; all contact is logged; consent/do-not-contact,
+  channel permissions, frequency limits, and comms/privacy law are enforced.
+  Virtual voice is only available where circumstances and explicit permission
+  allow.
+- **News-hounds** add a **momentum score** and feed candidates to the editor and
+  the human creative; they propose, they do not auto-publish.
+
+## 14. Human-in-the-loop & governance
+
+The pipeline is **agent-assisted, human-authored**. This is an architectural
+control, not just a policy:
+
+- **Publish is a human step.** No finished material is published to an audience
+  without a human writer assembling and signing off (see BRD §13). Agent outputs
+  are inputs to a human, never a direct-to-audience channel.
+- **Review gate.** The human creative reviews all sub-agent / specialist output
+  before publication; this gate sits between "agents produce" and "audience
+  receives".
+- **Outreach gate.** Sourcing-specialist outreach is drafted, queued, and
+  released only on human approval (with consent and audit controls).
+- **Future — second-line QA (Anthropic Fable managed agents).** A managed-agent
+  oversight layer audits agent behaviours and activities (sourcing integrity,
+  anomaly detection, conduct), so the human creative need not be technically
+  savvy to trust the pipeline. This automates *oversight of agents*, never
+  *authorship* or *publishing*.

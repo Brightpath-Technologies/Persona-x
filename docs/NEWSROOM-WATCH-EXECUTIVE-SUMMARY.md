@@ -86,8 +86,28 @@ New beats can be added in minutes without redesigning anything.
   For team-wide reliability we would host it centrally — a straightforward next
   step.
 
+## Human at the helm
+
+This is a **newsroom in your pocket — not a printing press that runs itself.**
+The agents do the legwork (research, sourcing, monitoring, collation); a human
+writer always assembles the result and delivers the message. Nothing is
+published to an audience unreviewed.
+
+The point is to **elevate the human creative while removing the mundane**: the
+person spends their time on judgement, narrative, and message — not on scanning
+sources. Because a human always reviews the agents' work and signs off the final
+piece, quality and integrity are preserved by design.
+
+Where this is heading: a roster of **specialist agents** (deep-research
+specialists drawing on research papers and libraries; sourcing specialists that
+keep a live list of human experts and draft outreach for approval; "news-hound"
+agents that spot rising stories before they peak), and — so the human creative
+need not be technical — a future layer of **Anthropic Fable managed agents that
+quality-check the other agents' behaviour**. The pipeline automates *oversight*,
+never *authorship*.
+
 ## In one line
 
 A private, twice-daily wire service for our key AI topics — newsroom-quality
-curation, deliberately engineered to run at minimal cost, delivered straight to
-Google Drive.
+curation, deliberately engineered to run at minimal cost and **always assembled
+by a human creative** — delivered straight to Google Drive.

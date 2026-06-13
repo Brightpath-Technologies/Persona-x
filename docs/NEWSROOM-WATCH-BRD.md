@@ -4,7 +4,7 @@
 |---|---|
 | **Document** | Business Requirements Document |
 | **Product** | Newsroom Watch |
-| **Version** | 0.1 (draft) |
+| **Version** | 0.2 (draft) |
 | **Owner** | victorycross@gmail.com (Brightpath Technologies) |
 | **Status** | Draft — for review |
 | **Last updated** | 13 June 2026 |
@@ -69,11 +69,15 @@ ones that will guide its evolution into a team-grade service.
 - A rolling local digest (Obsidian) and a desktop notification.
 
 ### Out of scope (current)
+- **Fully autonomous publication.** The service assists a human writer; it does
+  not publish finished material to an audience without human assembly and
+  sign-off (see §13).
 - Primary-source verification beyond public web reporting.
 - Centralised/multi-user hosting and access control.
 - Delivery channels other than Google Drive / desktop notification / Obsidian.
 - Non-English sources and translation.
 - Sentiment or trend analytics beyond significance tagging.
+- Specialist research/sourcing/news-hound sub-agents (planned — see §14).
 
 ## 6. Functional requirements
 
@@ -140,7 +144,38 @@ ones that will guide its evolution into a team-grade service.
   published, and recent releases.
 - Adding a new beat requires only a new prompt + roster entry (no editor change).
 
-## 13. Glossary
+## 13. Operating principle — human-in-the-loop & editorial integrity
+
+This is a foundational principle, not a feature toggle.
+
+- **The "newsroom in your pocket" does not publish autonomously.** A human
+  writer assembles the agents' work into a finished piece and delivers the
+  message. Nothing reaches an audience unreviewed.
+- **Elevate the human creative, remove the mundane.** Agents do the legwork
+  (research, sourcing, monitoring, collation); the human owns judgement,
+  narrative, and message. The service increases the value of the human creative
+  rather than replacing them.
+- **Human review is the quality gate.** The human creative reviews the work of
+  all sub-agents and specialists before publication, so quality and integrity
+  are always maintained.
+- **Integrity is the product.** Because a human always assembles and signs off
+  the final message, the service's credibility is preserved.
+- **Future — automated oversight, not automated publishing.** Anthropic Fable
+  managed agents will perform second-line quality checks on all agent behaviours
+  and activities, so the human creative need not be technically savvy to trust
+  the pipeline (see §14 and the Roadmap).
+
+## 14. Future requirements (planned)
+
+| ID | Requirement | Priority |
+|---|---|---|
+| FUT1 | **Research specialist sub-agents by domain** (e.g. architecture, cybersecurity, entertainment) shall gather from authoritative sources — research papers, libraries, standards bodies, primary documents — and cite primary sources. | Could |
+| FUT2 | **Sourcing specialist sub-agents** shall maintain a current roster of human sources per topic and **draft** tailored outreach (email, text, and — only where permitted — virtual voice). Outreach shall be drafted for human approval, not sent autonomously, with consent and audit controls. | Could |
+| FUT3 | **News-hound sub-agents** shall proactively detect rising stories on watched topics and surface candidates, so a news cycle need not be started manually. | Could |
+| FUT4 | **Second-line QA by Anthropic Fable managed agents** shall audit agent behaviour and outputs so the human creative need not be technical. | Could |
+| FUT5 | The human-in-the-loop review gate (§13) shall be explicit in any publishing workflow. | Must (when publishing is added) |
+
+## 15. Glossary
 - **Beat** — a topic area covered by one reporter agent.
 - **Desk / reporter** — the independent agent that researches one beat.
 - **Wire editor** — the deterministic step that collates, filters, de-dupes,
