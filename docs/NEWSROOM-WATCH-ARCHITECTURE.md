@@ -236,8 +236,9 @@ control, not just a policy:
 
 ## 15. Shared values & ethical principles
 
-Every role inherits one set of values (full statement in BRD §15): **Human AND
-machine** (partnership, not replacement); human authorship & oversight; **fair
+Every role inherits one set of values (full statement in BRD §15): **Human AND —**
+an open-ended tagline (whatever follows, a human is always in it; partnership,
+not replacement); human authorship & oversight; **fair
 compensation** and creator respect; consent & privacy; sourcing integrity;
 **editorial independence** from advertising; accessibility & inclusion;
 transparency & auditability; lawfulness; and oversight (not automation) of
