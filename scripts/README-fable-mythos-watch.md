@@ -5,6 +5,13 @@ US export control directive affecting Anthropic's Claude Fable 5 and Mythos 5
 models, dedupes against local state, appends fresh items to an Obsidian note,
 and fires a macOS notification.
 
+It also tracks **news releases published by Anthropic directly** (anthropic.com
+newsroom, official blog, official statements) and weighs each item's
+significance relative to Anthropic's routine/general releases. Official releases
+are flagged with `[Anthropic]` in the digest and notification, and every item
+carries a `high` / `medium` / `low` significance rating. Items are ordered with
+official and higher-significance entries first.
+
 It uses your existing Claude Code authentication via the `claude` CLI in
 headless mode — no API key required.
 
@@ -73,5 +80,10 @@ launchd's own stdout/stderr land in `/tmp/fable-mythos-watch.{out,err}.log`.
 - **Frequency:** change `StartInterval` in the plist (seconds). Default is
   `14400` (every 4 hours).
 - **Result count / focus:** edit the `PROMPT` in the script.
+- **Significance bar / official sources:** the `PROMPT` defines what counts as an
+  official Anthropic release and how `high` / `medium` / `low` significance is
+  assigned. Tighten or loosen those definitions there. Each item the model
+  returns includes `official` (boolean) and `significance` keys alongside the
+  `title`, `url`, `source`, `summary`, and `published` fields.
 - **Reset history:** delete `~/.fable-mythos-watch/seen.json` to be re-notified
   about everything on the next run.

@@ -50,10 +50,24 @@ substantive updates only: official statements, government action, reinstatement 
 news, legal or policy analysis, congressional response. Skip rehashes of the \
 initial shutdown.
 
+Pay special attention to news releases published by Anthropic directly: \
+official posts on anthropic.com/news, the Anthropic newsroom or blog, and \
+official company statements. For every item, judge how significant it is \
+relative to Anthropic's general, routine releases (ordinary product updates or \
+minor announcements). Treat an item as 'high' significance if it materially \
+changes the export-control situation or is an official Anthropic response to \
+it, 'medium' if it adds notable new information, and 'low' if it is routine or \
+incremental. Apply the same recency, substance, and dedup parameters to \
+official Anthropic releases as to general coverage.
+
 Return ONLY a raw JSON array and nothing else. No prose, no markdown, no code \
 fences. Each element must be an object with exactly these keys: title, url, \
-source, summary, published. summary is one or two plain sentences. published \
-is an approximate date string. Return at most 8 items, newest first. If you \
+source, summary, published, official, significance. summary is one or two \
+plain sentences. published is an approximate date string. official is a \
+boolean, true only when the item is a news release published by Anthropic \
+itself. significance is one of \"high\", \"medium\", or \"low\" as defined \
+above. Return at most 8 items, newest first; among items of similar recency, \
+list official Anthropic releases and higher-significance items first. If you \
 find nothing new, return []."
 
 # Run Claude Code headless. WebSearch is allowed so it can run unattended.
@@ -94,19 +108,23 @@ STAMP="$(date '+%Y-%m-%d %H:%M')"
   echo ""
   echo "## ${STAMP}"
   echo "${NEW_ITEMS}" | jq -r '.[] |
-    "\n### \(.title)\n- Source: \(.source)\n- Published: \(.published)\n- \(.url)\n\n\(.summary)"'
+    "\n### \(if (.official == true) then "[Anthropic] " else "" end)\(.title)\n- Source: \(.source)\(if (.official == true) then " (official Anthropic release)" else "" end)\n- Published: \(.published)\n- Significance: \(.significance // "unknown")\n- \(.url)\n\n\(.summary)"'
 } >> "${OBSIDIAN_NOTE}"
 
 # Record the new URLs as seen.
 jq -s '.[0] + (.[1] | map(.url)) | unique' "${SEEN_FILE}" <(echo "${NEW_ITEMS}") > "${SEEN_FILE}.tmp"
 mv "${SEEN_FILE}.tmp" "${SEEN_FILE}"
 
-# Fire one macOS notification summarizing the run.
+# Fire one macOS notification summarizing the run. Items are already ordered
+# with official Anthropic releases and higher-significance items first, so the
+# first item is the one most worth surfacing.
 FIRST_TITLE="$(echo "${NEW_ITEMS}" | jq -r '.[0].title')"
+FIRST_FLAG="$(echo "${NEW_ITEMS}" | jq -r 'if (.[0].official == true) then "[Anthropic] " elif (.[0].significance == "high") then "[Significant] " else "" end')"
+OFFICIAL_COUNT="$(echo "${NEW_ITEMS}" | jq '[ .[] | select(.official == true) ] | length')"
 if [ "${NEW_COUNT}" -eq 1 ]; then
-  NOTE_BODY="${FIRST_TITLE}"
+  NOTE_BODY="${FIRST_FLAG}${FIRST_TITLE}"
 else
-  NOTE_BODY="${NEW_COUNT} new items. Latest: ${FIRST_TITLE}"
+  NOTE_BODY="${NEW_COUNT} new items (${OFFICIAL_COUNT} official). Latest: ${FIRST_FLAG}${FIRST_TITLE}"
 fi
 
 # Escape double quotes for AppleScript.
