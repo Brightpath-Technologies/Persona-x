@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Reverse-DNS label. Must be unique among your LaunchAgents. -->
+    <key>Label</key>
+    <string>com.persona-x.fable-mythos-watch</string>
+
+    <!-- What to run. Edit the second string to the absolute path of the
+         script on YOUR machine. launchd will not expand ~, so use a full
+         path like /Users/you/Persona-x/scripts/fable-mythos-watch.sh -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/REPLACE/WITH/ABSOLUTE/PATH/scripts/fable-mythos-watch.sh</string>
+    </array>
+
+    <!-- Run every 4 hours (14400 seconds). Adjust to taste. -->
+    <key>StartInterval</key>
+    <integer>14400</integer>
+
+    <!-- Also run once immediately when the agent is loaded. -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- launchd does not inherit your login shell PATH. Give the job a sane
+         PATH so it can find claude, jq, osascript, etc. Adjust if your
+         tools live elsewhere (check with: which jq claude). -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <!-- Capture stdout/stderr for debugging. The script keeps its own log
+         at ~/.fable-mythos-watch/watch.log; these catch anything else. -->
+    <key>StandardOutPath</key>
+    <string>/tmp/fable-mythos-watch.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/fable-mythos-watch.err.log</string>
+</dict>
+</plist>
