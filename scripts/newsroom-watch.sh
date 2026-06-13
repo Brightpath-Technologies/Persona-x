@@ -1,30 +1,33 @@
 #!/bin/bash
 #
-# fable-mythos-watch.sh
+# newsroom-watch.sh
 # A source-checked "newsroom" watcher that publishes Morning, Afternoon, and
 # Final editions (like a traditional newspaper) plus a live HTML dashboard.
 #
-# Several reporter "desks" run in parallel, each as its own headless Claude Code
-# process (a separate sub-agent context). A pure-jq "wire editor" collates every
-# filing: it dedupes against local state, drops anything below a significance
-# floor, and orders official releases and higher-significance items first.
+# Several reporter "desks" — one per beat, defined in beats.json — run in
+# parallel, each as its own headless Claude Code process (a separate sub-agent
+# context). A pure-jq "wire editor" collates every filing: it dedupes against
+# local state, drops anything below a (per-beat) significance floor, enforces a
+# (per-beat) recency window, and orders official releases and higher-significance
+# items first.
 #
 # Each run:
-#   - publishes an EDITION (Morning, Afternoon, or Final) as Markdown to Google Drive,
+#   - publishes an EDITION (Morning, Afternoon, or Final) as Markdown to Google
+#     Drive, CLEARLY LABELLED A DRAFT for human review — nothing here is
+#     published to an audience until a human assembles, edits, and signs off,
 #   - regenerates a Dashboard.html (beats, editions, releases) in the same place,
 #   - appends to a rolling Obsidian digest, and
 #   - fires a macOS notification.
 #
-# Desks currently staffed:
-#   1. Fable 5 / Mythos 5 US export-control story (incl. direct Anthropic releases)
-#   2. PwC Canada and its competitors — significant AI developments only
-#
-# Add a desk: write a *_PROMPT, add a name to BEAT_NAMES, add a run_desk line,
-# and add its file to the collation. The dashboard picks it up automatically.
+# Beats are configuration, not code: edit scripts/beats.json to add, remove, or
+# retune a beat (including its own recency window and significance floor). The
+# editor and the dashboard pick up the change unchanged.
 #
 # Designed to run three times daily (Morning, Afternoon, Final) via launchd
-# (see com.persona-x.fable-mythos-watch.plist).
+# (see com.brightpath.newsroom-watch.plist).
 # Uses your existing Claude Code authentication. No API key needed.
+#
+# Targets macOS's stock /bin/bash (3.2) — no bash-4 features (mapfile, assoc arrays).
 
 set -euo pipefail
 
@@ -33,7 +36,7 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 
 # Rolling digest in your Obsidian vault (everything seen, appended over time).
-OBSIDIAN_NOTE="${HOME}/Obsidian/MainVault/00-Inbox/fable-mythos-watch.md"
+OBSIDIAN_NOTE="${HOME}/Obsidian/MainVault/00-Inbox/newsroom-watch.md"
 
 # Google Drive folder for editions + the dashboard. With Google Drive for
 # Desktop installed, files written here sync automatically. Find your path under
@@ -44,6 +47,11 @@ GDRIVE_DIR="${GDRIVE_DIR:-${HOME}/Library/CloudStorage/GoogleDrive-your.account@
 # launchd does not inherit your shell PATH, so hardcode it.
 CLAUDE_BIN="${HOME}/.local/bin/claude"
 
+# Beats, as config (JSON, parsed with jq — no new dependency). Override with
+# BEATS_FILE=… for a different use case (charity, real-estate, etc.).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BEATS_FILE="${BEATS_FILE:-${SCRIPT_DIR}/beats.json}"
+
 # ---------------------------------------------------------------------------
 # Model + token budget. Default is sonnet for well-grounded, cited results;
 # drop to haiku for lower cost if you accept a higher hallucination risk.
@@ -53,28 +61,25 @@ REPORTER_MODEL="${REPORTER_MODEL:-sonnet}"
 DESK_MAX_TURNS="${DESK_MAX_TURNS:-12}"
 DESK_MAX_ITEMS="${DESK_MAX_ITEMS:-6}"
 
-# Editor (pure jq) settings.
+# Editor (pure jq) settings. SIGNIFICANCE_FLOOR and MAX_AGE_DAYS are GLOBAL
+# fallbacks; a beat may override either in beats.json.
 MAX_ITEMS="${MAX_ITEMS:-12}"                          # cap after collation
-SIGNIFICANCE_FLOOR="${SIGNIFICANCE_FLOOR:-medium}"    # drop below this: low|medium|high
-MAX_AGE_DAYS="${MAX_AGE_DAYS:-3}"                     # drop items published more than this many days ago (suits a 3-edition day)
+SIGNIFICANCE_FLOOR="${SIGNIFICANCE_FLOOR:-medium}"    # global fallback: low|medium|high
+MAX_AGE_DAYS="${MAX_AGE_DAYS:-3}"                     # global fallback recency window (suits a 3-edition day)
 
 # Publish an edition even on a quiet news cycle (true), or stay silent (false).
 PUBLISH_EMPTY="${PUBLISH_EMPTY:-true}"
 
 # ---------------------------------------------------------------------------
-# Internal state.
+# Internal state.  (Renamed from ~/.fable-mythos-watch — migrate existing state
+# with:  mv ~/.fable-mythos-watch ~/.newsroom-watch )
 # ---------------------------------------------------------------------------
 
-STATE_DIR="${HOME}/.fable-mythos-watch"
+STATE_DIR="${HOME}/.newsroom-watch"
 SEEN_FILE="${STATE_DIR}/seen.json"
 HISTORY_FILE="${STATE_DIR}/history.jsonl"
 LOG_FILE="${STATE_DIR}/watch.log"
 DASHBOARD_FILE="${GDRIVE_DIR}/Newsroom Watch — Dashboard.html"
-
-# The roster, used by both the desks and the dashboard.
-BEAT_EXPORT="Fable/Mythos export control"
-BEAT_PWC="PwC Canada & competitors (AI)"
-BEAT_NAMES=("${BEAT_EXPORT}" "${BEAT_PWC}")
 
 mkdir -p "${STATE_DIR}"
 mkdir -p "$(dirname "${OBSIDIAN_NOTE}")"
@@ -82,6 +87,18 @@ mkdir -p "$(dirname "${OBSIDIAN_NOTE}")"
 [ -f "${OBSIDIAN_NOTE}" ] || printf '# Newsroom Watch — rolling digest\n\nAutomated. New items appended below; editions and the dashboard go to Google Drive.\n' > "${OBSIDIAN_NOTE}"
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S')  $*" >> "${LOG_FILE}"; }
+
+# Sanity-check the beats config up front.
+if [ ! -f "${BEATS_FILE}" ]; then
+  log "FATAL: beats file not found: ${BEATS_FILE}"
+  echo "newsroom-watch: beats file not found: ${BEATS_FILE}" >&2
+  exit 1
+fi
+if ! jq empty "${BEATS_FILE}" >/dev/null 2>&1; then
+  log "FATAL: beats file is not valid JSON: ${BEATS_FILE}"
+  echo "newsroom-watch: beats file is not valid JSON: ${BEATS_FILE}" >&2
+  exit 1
+fi
 
 # Which edition is this? Derived from the clock unless EDITION is set.
 # Traditional cadence: Morning (before noon), Afternoon (noon–18:00), Final (18:00+).
@@ -95,55 +112,37 @@ if [ -z "${EDITION:-}" ]; then
   fi
 fi
 
-log "run started (${EDITION} edition, model=${REPORTER_MODEL}, floor=${SIGNIFICANCE_FLOOR})"
+log "run started (${EDITION} edition, model=${REPORTER_MODEL}, global floor=${SIGNIFICANCE_FLOOR}, global window=${MAX_AGE_DAYS}d)"
 
-# Shared output contract, kept DRY across desks, with hard anti-fabrication rules.
-JSON_CONTRACT="Run several distinct web searches with varied phrasing before \
+# A day-cutoff (YYYY-MM-DD) for N days ago, handling GNU and BSD/macOS date.
+cutoff_for() {
+  local n="$1"
+  date -u -d "${n} days ago" +%Y-%m-%d 2>/dev/null || date -u -v-"${n}"d +%Y-%m-%d
+}
+
+# Shared output contract, kept DRY across desks, with hard anti-fabrication
+# rules. Takes the per-beat recency window (days) so each desk is told its own.
+build_contract() {
+  local age="$1"
+  printf '%s' "Run several distinct web searches with varied phrasing before \
 concluding. Only include an item you actually found via web search and can cite \
 with a real, working URL — never invent, guess, or infer an item or a link. If \
 you are unsure an item is real, omit it. An empty result is acceptable and \
 preferred over a fabricated one.
 
-RECENCY: only include items published within the last ${MAX_AGE_DAYS} days. \
-Omit anything older, even if significant.
+RECENCY: only include items published within the last ${age} days. Omit anything \
+older, even if significant.
 
 Return ONLY a raw JSON array and nothing else. No prose, no markdown, no code \
 fences. Each element must be an object with exactly these keys: title, url, \
 source, summary, published, official, significance. summary is one or two plain \
 sentences. published must be the publication date in ISO format YYYY-MM-DD \
-(your best estimate). official is a boolean, true \
-only when the item is a release published by the organisation the story is \
-about. significance is one of \"high\", \"medium\", or \"low\". Return at most \
-${DESK_MAX_ITEMS} items, newest first; list official releases and \
-higher-significance items first. If you find nothing that clears the bar, \
-return []."
-
-# --- Desk 1: Fable 5 / Mythos 5 export control -----------------------------
-EXPORT_PROMPT="Search the web for the most recent developments, as of right \
-now, on the US government export control directive against Anthropic's Claude \
-Fable 5 and Claude Mythos 5 models (the suspension that began June 12 2026). \
-Substantive updates only: official statements, government action, reinstatement \
-news, legal or policy analysis, congressional response, and any legal, \
-oversight, or investigative developments. Skip rehashes of the initial \
-shutdown. Pay special attention to news releases published by Anthropic \
-directly (anthropic.com/news, the Anthropic newsroom or blog). Rate \
-significance relative to routine releases: 'high' if it materially changes the \
-export-control situation or is an official Anthropic response, 'medium' if it \
-adds notable new information, 'low' if routine. ${JSON_CONTRACT}"
-
-# --- Desk 2: PwC Canada and competitors (AI) -------------------------------
-PWC_PROMPT="Search the web for the most recent, significant AI developments \
-involving PwC Canada and its main competitors: the other Big Four firms in \
-Canada (Deloitte Canada, KPMG Canada, EY Canada) and major consulting/AI \
-rivals (Accenture, McKinsey/QuantumBlack, IBM Consulting). Focus on material AI \
-developments: new AI products or platforms, major partnerships, AI \
-assurance/governance or regulatory offerings, significant acquisitions or \
-hires, and firm responses to AI policy and export-control developments. Only \
-include items that are significant in terms of AI developments; skip routine \
-marketing, minor blog posts, and generic thought-leadership. Treat an item as \
-official when it is a release published by the firm itself. Rate significance: \
-'high' for a material AI development that changes a firm's AI capabilities or \
-market position, 'medium' for notable news, 'low' for routine. ${JSON_CONTRACT}"
+(your best estimate). official is a boolean, true only when the item is a \
+release published by the organisation the story is about. significance is one \
+of \"high\", \"medium\", or \"low\". Return at most ${DESK_MAX_ITEMS} items, \
+newest first; list official releases and higher-significance items first. If \
+you find nothing that clears the bar, return []."
+}
 
 # ---------------------------------------------------------------------------
 # A reporter desk: run one headless Claude Code sub-agent, validate its filing,
@@ -175,6 +174,7 @@ run_desk() {
 # ---------------------------------------------------------------------------
 # render_dashboard <out.html> — regenerate a self-contained dashboard from the
 # run history: totals, per-beat counts, editions, and recent releases.
+# Relies on the BEAT_NAMES array (built below from beats.json).
 # ---------------------------------------------------------------------------
 render_dashboard() {
   local out="$1"
@@ -230,7 +230,7 @@ render_dashboard() {
 </style></head>
 <body><div class=wrap>
  <h1>Newsroom Watch — Dashboard</h1>
- <p class=sub>Last run: ${last_ts}</p>
+ <p class=sub>Last run: ${last_ts} · editions are drafts for human review</p>
  <div class=cards>
   <div class=card><div class=n>${total_runs}</div><div class=l>Runs</div></div>
   <div class=card><div class=n>${total_pub}</div><div class=l>Releases published</div></div>
@@ -246,72 +246,115 @@ render_dashboard() {
  <h2>Recent releases</h2>
  <table><thead><tr><th>Date</th><th>Beat</th><th>Signif.</th><th class=ctr>Off.</th><th>Headline</th></tr></thead>
  <tbody>${release_rows}</tbody></table>
- <footer>Generated by fable-mythos-watch.sh · ${last_ts}</footer>
+ <footer>Generated by newsroom-watch.sh · ${last_ts}</footer>
 </div></body></html>
 HTML
   log "dashboard written: ${out}"
 }
 
 # ---------------------------------------------------------------------------
-# NEWSROOM: staff the desks in parallel, then wait for every filing.
+# Load beats from config into parallel indexed arrays (bash 3.2 — no mapfile).
 # ---------------------------------------------------------------------------
-EXPORT_OUT="${STATE_DIR}/desk-export.json"
-PWC_OUT="${STATE_DIR}/desk-pwc.json"
-echo "[]" > "${EXPORT_OUT}"
-echo "[]" > "${PWC_OUT}"
+NUM_BEATS="$(jq '.beats | length' "${BEATS_FILE}")"
+if [ "${NUM_BEATS}" -eq 0 ]; then
+  log "FATAL: no beats configured in ${BEATS_FILE}"
+  echo "newsroom-watch: no beats configured in ${BEATS_FILE}" >&2
+  exit 1
+fi
 
-run_desk "${BEAT_EXPORT}" "${EXPORT_PROMPT}" "${EXPORT_OUT}" &
-run_desk "${BEAT_PWC}" "${PWC_PROMPT}" "${PWC_OUT}" &
+BEAT_IDS=(); BEAT_NAMES=(); BEAT_AGES=(); BEAT_FLOORS=(); DESK_FILES=()
+i=0
+while [ "${i}" -lt "${NUM_BEATS}" ]; do
+  BEAT_IDS+=("$(jq -r ".beats[${i}].id" "${BEATS_FILE}")")
+  BEAT_NAMES+=("$(jq -r ".beats[${i}].name" "${BEATS_FILE}")")
+  BEAT_AGES+=("$(jq -r ".beats[${i}].max_age_days // ${MAX_AGE_DAYS}" "${BEATS_FILE}")")
+  BEAT_FLOORS+=("$(jq -r ".beats[${i}].significance_floor // \"${SIGNIFICANCE_FLOOR}\"" "${BEATS_FILE}")")
+  i=$((i+1))
+done
+
+# ---------------------------------------------------------------------------
+# NEWSROOM: staff every desk in parallel; build the per-beat meta map the editor
+# uses for per-beat recency + significance floors.
+# ---------------------------------------------------------------------------
+BEAT_META="{}"                       # { "<beat name>": {cutoff, floor}, … }
+i=0
+while [ "${i}" -lt "${NUM_BEATS}" ]; do
+  bid="${BEAT_IDS[$i]}"; bname="${BEAT_NAMES[$i]}"; bage="${BEAT_AGES[$i]}"; bfloor="${BEAT_FLOORS[$i]}"
+  bcutoff="$(cutoff_for "${bage}")"
+  BEAT_META="$(jq -c --arg n "${bname}" --arg c "${bcutoff}" --arg f "${bfloor}" \
+    '. + {($n): {cutoff:$c, floor:$f}}' <<<"${BEAT_META}")"
+
+  out="${STATE_DIR}/desk-${bid}.json"
+  echo "[]" > "${out}"
+  DESK_FILES+=("${out}")
+
+  bprompt="$(jq -r ".beats[${i}].prompt" "${BEATS_FILE}")"
+  full_prompt="${bprompt} $(build_contract "${bage}")"
+  log "desk '${bname}': window ${bage}d (cutoff ${bcutoff}), floor ${bfloor}"
+  run_desk "${bname}" "${full_prompt}" "${out}" &
+  i=$((i+1))
+done
 wait
 
 # ---------------------------------------------------------------------------
 # WIRE EDITOR (pure jq, no model). Collate, drop already-seen, enforce the
-# significance floor, dedupe, order, and cap.
+# (per-beat) significance floor and (per-beat) recency, dedupe, order, and cap.
+# Undated items (no parseable published date) are KEPT but normalised to
+# published:null and ordered LAST, so the human sees them flagged rather than
+# silently mixed in (design note C3).
 # ---------------------------------------------------------------------------
-ALL_ITEMS="$(jq -s 'add // []' "${EXPORT_OUT}" "${PWC_OUT}")"
-
-# Recency cutoff (YYYY-MM-DD), handling both GNU and BSD/macOS date.
-CUTOFF="$(date -u -d "${MAX_AGE_DAYS} days ago" +%Y-%m-%d 2>/dev/null || date -u -v-"${MAX_AGE_DAYS}"d +%Y-%m-%d)"
-log "recency cutoff: ${CUTOFF} (last ${MAX_AGE_DAYS} days)"
+ALL_ITEMS="$(jq -s 'add // []' "${DESK_FILES[@]}")"
+GLOBAL_CUTOFF="$(cutoff_for "${MAX_AGE_DAYS}")"
 
 NEW_ITEMS="$(jq -n \
   --argjson all "${ALL_ITEMS}" \
   --slurpfile seen "${SEEN_FILE}" \
-  --arg floor "${SIGNIFICANCE_FLOOR}" \
-  --arg max "${MAX_ITEMS}" \
-  --arg cutoff "${CUTOFF}" '
+  --argjson meta "${BEAT_META}" \
+  --arg gfloor "${SIGNIFICANCE_FLOOR}" \
+  --arg gcutoff "${GLOBAL_CUTOFF}" \
+  --arg max "${MAX_ITEMS}" '
   def rank(s): {"low":1,"medium":2,"high":3}[s] // 2;
   def isodate: if (type=="string" and test("[0-9]{4}-[0-9]{2}-[0-9]{2}"))
                then (capture("(?<d>[0-9]{4}-[0-9]{2}-[0-9]{2})").d) else null end;
   (($seen[0]) // []) as $seenurls
   | [ $all[]
+      | ($meta[.beat] // {cutoff:$gcutoff, floor:$gfloor}) as $m
       | .url as $u
       | select(($seenurls | index($u)) | not)
-      | select(rank(.significance) >= rank($floor))
-      | select((.published | isodate) as $d | $d == null or $d >= $cutoff) ]
+      | select(rank(.significance) >= rank($m.floor))
+      | (.published | isodate) as $d
+      | select($d == null or $d >= $m.cutoff)
+      | .published = $d ]                                  # undated → null, dated → ISO
   | unique_by(.url)
-  | sort_by([ (if .official then 0 else 1 end), (3 - rank(.significance)) ])
+  | sort_by([ (if .official then 0 else 1 end),
+              (if .published == null then 1 else 0 end),   # undated last (C3)
+              (3 - rank(.significance)) ])
   | .[0:($max | tonumber)]
 ')"
 
 NEW_COUNT="$(echo "${NEW_ITEMS}" | jq 'length')"
-log "${NEW_COUNT} new item(s) for the ${EDITION} edition"
+log "${NEW_COUNT} new item(s) for the ${EDITION} edition (draft)"
+
+# Per-beat filed counts for the history record.
+FILED_MAP="{}"
+i=0
+while [ "${i}" -lt "${NUM_BEATS}" ]; do
+  bname="${BEAT_NAMES[$i]}"; out="${DESK_FILES[$i]}"
+  cnt="$(jq 'length' "${out}")"
+  FILED_MAP="$(jq -c --arg n "${bname}" --argjson c "${cnt}" '. + {($n): $c}' <<<"${FILED_MAP}")"
+  i=$((i+1))
+done
 
 # Record this run in history (always — even quiet runs show on the dashboard).
 jq -n -c \
   --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg edition "${EDITION}" \
   --arg date "${DATE}" \
-  --arg be "${BEAT_EXPORT}" \
-  --arg bp "${BEAT_PWC}" \
-  --argjson fe "$(jq 'length' "${EXPORT_OUT}")" \
-  --argjson fp "$(jq 'length' "${PWC_OUT}")" \
+  --argjson filed "${FILED_MAP}" \
   --argjson published "${NEW_ITEMS}" \
-  '{ts:$ts, edition:$edition, date:$date,
-    filed:{($be):$fe, ($bp):$fp},
-    published:$published}' >> "${HISTORY_FILE}"
+  '{ts:$ts, edition:$edition, date:$date, filed:$filed, published:$published}' >> "${HISTORY_FILE}"
 
-# Decide whether to publish an edition this run.
+# Decide whether to publish a (draft) edition this run.
 if [ "${NEW_COUNT}" -eq 0 ] && [ "${PUBLISH_EMPTY}" != "true" ]; then
   log "no new items and PUBLISH_EMPTY=false — no edition published"
   render_dashboard "${DASHBOARD_FILE}"
@@ -324,26 +367,31 @@ if [ "${NEW_COUNT}" -gt 0 ]; then
     group_by(.beat)[] |
     ( "\n## \(.[0].beat)" ),
     ( .[] |
-      "\n### \(if .official == true then "[Official] " else "" end)\(.title)\n- Source: \(.source)\(if .official == true then " (official release)" else "" end)\n- Published: \(.published)\n- Significance: \(.significance // "unknown")\n- \(.url)\n\n\(.summary)" )
+      "\n### \(if .official == true then "[Official] " else "" end)\(.title)\n- Source: \(.source)\(if .official == true then " (official release)" else "" end)\n- Published: \(.published // "undated")\n- Significance: \(.significance // "unknown")\n- \(.url)\n\n\(.summary)" )
   ')"
 else
   BODY=$'\n_No new significant items this edition._'
 fi
 
-# --- Publish the edition to Google Drive -----------------------------------
-EDITION_FILE="${GDRIVE_DIR}/Newsroom Watch ${DATE} — ${EDITION} Edition.md"
+# Dynamic beats line for the edition header.
+BEATS_LINE="$(printf '%s · ' "${BEAT_NAMES[@]}")"; BEATS_LINE="${BEATS_LINE% · }"
+
+# --- Publish the (draft) edition to Google Drive ---------------------------
+EDITION_FILE="${GDRIVE_DIR}/Newsroom Watch ${DATE} — ${EDITION} Edition (Draft).md"
 DRIVE_OK=0
 if mkdir -p "${GDRIVE_DIR}" 2>>"${LOG_FILE}"; then
   {
-    echo "# Newsroom Watch — ${EDITION} Edition"
+    echo "# Newsroom Watch — ${EDITION} Edition (Draft)"
     echo ""
-    echo "**${DATE_LONG}**  ·  significance floor: ${SIGNIFICANCE_FLOOR}  ·  ${NEW_COUNT} item(s)"
+    echo "> **DRAFT — for human review.** Assembled by agents; nothing here is published to an audience until a human reviews, edits, and signs off."
     echo ""
-    echo "Beats: ${BEAT_EXPORT} · ${BEAT_PWC}"
+    echo "**${DATE_LONG}**  ·  significance floor: per-beat (default ${SIGNIFICANCE_FLOOR})  ·  ${NEW_COUNT} item(s)"
+    echo ""
+    echo "Beats: ${BEATS_LINE}"
     echo "${BODY}"
   } > "${EDITION_FILE}"
   DRIVE_OK=1
-  log "edition filed to Drive: ${EDITION_FILE}"
+  log "draft edition filed to Drive: ${EDITION_FILE}"
 else
   log "GDRIVE_DIR unavailable — edition not saved to Drive"
 fi
@@ -353,7 +401,7 @@ if [ "${NEW_COUNT}" -gt 0 ]; then
   STAMP="$(date '+%Y-%m-%d %H:%M')"
   {
     echo ""
-    echo "## ${STAMP} — ${EDITION} edition"
+    echo "## ${STAMP} — ${EDITION} edition (draft)"
     echo "${BODY}"
   } >> "${OBSIDIAN_NOTE}"
 
@@ -364,18 +412,18 @@ fi
 # --- Regenerate the dashboard ----------------------------------------------
 render_dashboard "${DASHBOARD_FILE}"
 
-# --- One macOS notification summarising the edition ------------------------
+# --- One macOS notification summarising the (draft) edition ----------------
 if [ "${NEW_COUNT}" -gt 0 ]; then
   FIRST_TITLE="$(echo "${NEW_ITEMS}" | jq -r '.[0].title')"
   FIRST_FLAG="$(echo "${NEW_ITEMS}" | jq -r 'if (.[0].official == true) then "[Official] " elif (.[0].significance == "high") then "[Significant] " else "" end')"
   OFFICIAL_COUNT="$(echo "${NEW_ITEMS}" | jq '[ .[] | select(.official == true) ] | length')"
-  NOTE_BODY="${NEW_COUNT} items (${OFFICIAL_COUNT} official). Top: ${FIRST_FLAG}${FIRST_TITLE}"
+  NOTE_BODY="${NEW_COUNT} items (${OFFICIAL_COUNT} official) to review. Top: ${FIRST_FLAG}${FIRST_TITLE}"
 else
   NOTE_BODY="No new significant items today."
 fi
-[ "${DRIVE_OK}" -eq 1 ] && NOTE_BODY="${NOTE_BODY} · saved to Google Drive"
+[ "${DRIVE_OK}" -eq 1 ] && NOTE_BODY="${NOTE_BODY} · draft saved to Google Drive"
 
 NOTE_BODY_ESCAPED="$(echo "${NOTE_BODY}" | sed 's/"/\\"/g')"
-osascript -e "display notification \"${NOTE_BODY_ESCAPED}\" with title \"Newsroom Watch — ${EDITION} Edition\" sound name \"Submarine\""
+osascript -e "display notification \"${NOTE_BODY_ESCAPED}\" with title \"Newsroom Watch — ${EDITION} Draft\" sound name \"Submarine\""
 
-log "run complete, ${EDITION} edition published"
+log "run complete, ${EDITION} draft edition published"

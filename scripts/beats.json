@@ -1,0 +1,19 @@
+{
+  "_comment": "Newsroom Watch beats, as config. Edit this file to add/remove/retune beats — no code change needed. Each beat: id (slug, used for the desk-<id>.json filename), name (display + tag), optional max_age_days (per-beat recency window; falls back to the global MAX_AGE_DAYS), optional significance_floor (low|medium|high; falls back to the global SIGNIFICANCE_FLOOR), and prompt (the desk's instruction; the shared anti-fabrication JSON contract is appended automatically). Parsed with jq — no new dependency.",
+  "beats": [
+    {
+      "id": "export",
+      "name": "Fable/Mythos export control",
+      "max_age_days": 3,
+      "significance_floor": "medium",
+      "prompt": "Search the web for the most recent developments, as of right now, on the US government export control directive against Anthropic's Claude Fable 5 and Claude Mythos 5 models (the suspension that began June 12 2026). Substantive updates only: official statements, government action, reinstatement news, legal or policy analysis, congressional response, and any legal, oversight, or investigative developments. Skip rehashes of the initial shutdown. Pay special attention to news releases published by Anthropic directly (anthropic.com/news, the Anthropic newsroom or blog). Rate significance relative to routine releases: 'high' if it materially changes the export-control situation or is an official Anthropic response, 'medium' if it adds notable new information, 'low' if routine."
+    },
+    {
+      "id": "pwc",
+      "name": "PwC Canada & competitors (AI)",
+      "max_age_days": 14,
+      "significance_floor": "medium",
+      "prompt": "Search the web for the most recent, significant AI developments involving PwC Canada and its main competitors: the other Big Four firms in Canada (Deloitte Canada, KPMG Canada, EY Canada) and major consulting/AI rivals (Accenture, McKinsey/QuantumBlack, IBM Consulting). Focus on material AI developments: new AI products or platforms, major partnerships, AI assurance/governance or regulatory offerings, significant acquisitions or hires, and firm responses to AI policy and export-control developments. Only include items that are significant in terms of AI developments; skip routine marketing, minor blog posts, and generic thought-leadership. Treat an item as official when it is a release published by the firm itself. Rate significance: 'high' for a material AI development that changes a firm's AI capabilities or market position, 'medium' for notable news, 'low' for routine."
+    }
+  ]
+}
