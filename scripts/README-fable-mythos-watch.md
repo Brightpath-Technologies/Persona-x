@@ -1,16 +1,27 @@
-# Fable 5 / Mythos 5 Export Control Watch
+# Newsroom Watch — Fable/Mythos Export Control + AI
 
-A small launchd-driven watcher that polls the web for new developments on the
-US export control directive affecting Anthropic's Claude Fable 5 and Mythos 5
-models, dedupes against local state, appends fresh items to an Obsidian note,
+A small launchd-driven "newsroom" that polls the web for significant news on a
+few beats, dedupes against local state, appends fresh items to an Obsidian note,
 and fires a macOS notification.
 
-It also tracks **news releases published by Anthropic directly** (anthropic.com
-newsroom, official blog, official statements) and weighs each item's
-significance relative to Anthropic's routine/general releases. Official releases
-are flagged with `[Anthropic]` in the digest and notification, and every item
-carries a `high` / `medium` / `low` significance rating. Items are ordered with
-official and higher-significance entries first.
+It is built for **minimal token use**. Several reporter **desks** run in
+parallel, each as its own headless `claude` sub-agent on a small, cheap model
+(`haiku` by default). A pure-`jq` **wire editor** then collates every filing —
+no extra model call, so the editing stage costs zero tokens.
+
+Beats currently staffed:
+
+1. **Fable 5 / Mythos 5 export control** — the US export-control directive
+   against Anthropic's Claude Fable 5 and Mythos 5 models, including news
+   releases published by **Anthropic directly** (anthropic.com newsroom, blog,
+   official statements).
+2. **PwC Canada & competitors (AI)** — significant AI developments at PwC Canada
+   and its main rivals (Deloitte / KPMG / EY Canada, Accenture, McKinsey, IBM).
+
+Every item carries an `official` flag and a `high` / `medium` / `low`
+significance rating. The editor drops anything below the significance floor,
+dedupes by URL, and orders official and higher-significance items first.
+Official releases are flagged `[Official]` in the digest and notification.
 
 It uses your existing Claude Code authentication via the `claude` CLI in
 headless mode — no API key required.
@@ -19,8 +30,27 @@ headless mode — no API key required.
 
 | File | Purpose |
 |---|---|
-| `fable-mythos-watch.sh` | The watcher itself. Runs one polling cycle. |
+| `fable-mythos-watch.sh` | The watcher. Runs the desks, edits, and publishes one cycle. |
 | `com.persona-x.fable-mythos-watch.plist` | launchd agent that runs the script on a schedule. |
+
+## How it works (newsroom)
+
+```
+ ┌──────────────┐   ┌──────────────┐      (parallel headless `claude` sub-agents,
+ │  export desk │   │   PwC desk   │  ...   small model, tight turn/item caps)
+ └──────┬───────┘   └──────┬───────┘
+        │  JSON filings (tagged with beat, official, significance)
+        └──────────┬───────┘
+              ┌────▼────┐   pure jq, no model:
+              │ editor  │   collate → drop below floor → dedupe → order → cap
+              └────┬────┘
+        ┌──────────┴───────────┐
+   Obsidian note          macOS notification
+```
+
+Add a desk by writing a new `*_PROMPT` and adding one `run_desk` line in the
+`NEWSROOM` block. The shared `JSON_CONTRACT` keeps every desk's output format
+identical, so the editor needs no changes.
 
 ## Requirements
 
@@ -71,19 +101,26 @@ headless mode — no API key required.
 The script keeps everything under `~/.fable-mythos-watch/`:
 
 - `seen.json` — URLs already reported, so you are not notified twice.
-- `watch.log` — timestamped run log.
+- `desk-*.json` — the latest raw filing from each desk (handy for debugging).
+- `watch.log` — timestamped run log, including per-desk item counts.
 
 launchd's own stdout/stderr land in `/tmp/fable-mythos-watch.{out,err}.log`.
 
 ## Tuning
 
+All of these are environment variables with sensible defaults — set them in the
+plist's `EnvironmentVariables` or inline when testing.
+
 - **Frequency:** change `StartInterval` in the plist (seconds). Default is
   `14400` (every 4 hours).
-- **Result count / focus:** edit the `PROMPT` in the script.
-- **Significance bar / official sources:** the `PROMPT` defines what counts as an
-  official Anthropic release and how `high` / `medium` / `low` significance is
-  assigned. Tighten or loosen those definitions there. Each item the model
-  returns includes `official` (boolean) and `significance` keys alongside the
-  `title`, `url`, `source`, `summary`, and `published` fields.
+- **Model / token cost:** `REPORTER_MODEL` (default `haiku`). Bump to `sonnet`
+  for sharper judgement at higher cost. The editor is always pure jq.
+- **Per-desk caps:** `DESK_MAX_TURNS` (default `8`) and `DESK_MAX_ITEMS`
+  (default `6`) bound each desk's work.
+- **Significance floor:** `SIGNIFICANCE_FLOOR` (default `medium`) drops anything
+  rated below it — set `low` to keep everything, `high` for headlines only.
+- **Total cap:** `MAX_ITEMS` (default `10`) caps items per run after collation.
+- **Beats / focus:** edit the `*_PROMPT` strings, or add a desk (see *How it
+  works*).
 - **Reset history:** delete `~/.fable-mythos-watch/seen.json` to be re-notified
   about everything on the next run.
