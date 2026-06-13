@@ -55,7 +55,7 @@ DESK_MAX_ITEMS="${DESK_MAX_ITEMS:-6}"
 # Editor (pure jq) settings.
 MAX_ITEMS="${MAX_ITEMS:-12}"                          # cap after collation
 SIGNIFICANCE_FLOOR="${SIGNIFICANCE_FLOOR:-medium}"    # drop below this: low|medium|high
-MAX_AGE_DAYS="${MAX_AGE_DAYS:-7}"                     # drop items published more than this many days ago
+MAX_AGE_DAYS="${MAX_AGE_DAYS:-3}"                     # drop items published more than this many days ago (twice-daily cadence)
 
 # Publish an edition even on a quiet news cycle (true), or stay silent (false).
 PUBLISH_EMPTY="${PUBLISH_EMPTY:-true}"

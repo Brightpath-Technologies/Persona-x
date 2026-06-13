@@ -8,8 +8,8 @@ notification. It also regenerates a self-contained **dashboard**
 beat, every edition, and the releases published. A rolling Obsidian digest of
 everything seen is also kept.
 
-Only items published within the last **7 days** are reported (configurable via
-`MAX_AGE_DAYS`).
+Only items published within the last **3 days** are reported (configurable via
+`MAX_AGE_DAYS`) — tuned for the twice-daily cadence so editions stay fresh.
 
 > For a non-technical, team-shareable overview of the approach, see
 > [`docs/NEWSROOM-WATCH-EXECUTIVE-SUMMARY.md`](../docs/NEWSROOM-WATCH-EXECUTIVE-SUMMARY.md).
@@ -134,7 +134,7 @@ plist's `EnvironmentVariables` or inline when testing.
 - **Model / token cost:** `REPORTER_MODEL` (default `sonnet` for well-grounded,
   cited results). Drop to `haiku` for lower cost if you accept a higher
   hallucination risk. The editor is always pure jq.
-- **Recency window:** `MAX_AGE_DAYS` (default `7`) drops anything published more
+- **Recency window:** `MAX_AGE_DAYS` (default `3`) drops anything published more
   than this many days ago. The desks are told the window and the editor enforces
   it from each item's `published` (ISO `YYYY-MM-DD`) date.
 - **Per-desk caps:** `DESK_MAX_TURNS` (default `8`) and `DESK_MAX_ITEMS`
