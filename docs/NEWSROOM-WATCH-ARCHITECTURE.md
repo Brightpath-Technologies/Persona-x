@@ -4,7 +4,7 @@
 |---|---|
 | **Document** | Solution / Technical Architecture |
 | **Product** | Newsroom Watch |
-| **Version** | 0.2 (draft) |
+| **Version** | 0.3 (draft) |
 | **Owner** | victorycross@gmail.com (Brightpath Technologies) |
 | **Status** | Draft — for review |
 | **Last updated** | 13 June 2026 |
@@ -183,6 +183,13 @@ creative (§14). Roles are configurable and isolated, consistent with the
 | **Research specialist** (by domain: architecture, cybersecurity, entertainment, …) | Deeper, authoritative material | Research papers, libraries, standards bodies, primary documents | Cited, primary-source briefs |
 | **Sourcing specialist** | Maintain live human-source roster; draft outreach | Contact roster; drafts via email/text/(permitted) virtual voice | Outreach drafts for human approval + contact log |
 | **News-hound** | Proactively detect rising stories | Continuous/periodic scanning + momentum scoring | Early-signal candidates / suggested beats |
+| **Media-contributor specialist** | Source original, rights-cleared media | Human photographers/illustrators/videographers (paid contributors) | Briefed assets → rights role + human selection |
+| **Rights & licensing ("deals")** | Negotiate fair, real payment for media/art | Rights-holders; licence drafts | Negotiated terms + licence drafts (human authorises) |
+| **Editor-in-chief ("J.J. Jameson")** | Enforce standards, angle, significance bar | Internal (the desks' output) | Assignments, critiques, gatekeeping (human decides) |
+| **Legal clerk** | Clearance & compliance support (clerk, not counsel) | Rights/permissions, attribution, fair-use/defamation checks | Cleared/flagged items; escalations to humans |
+| **Advertising/sponsorship** (conditional) | Sponsorship sourcing/placement | Advertisers/sponsors | Proposals — strictly separated from editorial |
+| **Translation & localisation** | Translate sources/outputs faithfully | Non-English sources; target locales | Translations with fidelity flags |
+| **Accessibility** | Make outputs accessible by default | The edition + assets | Alt-text, captions/transcripts, plain-language, WCAG checks |
 
 Architectural notes:
 - **Research specialists** carry a domain source-quality rubric and prioritise
@@ -195,6 +202,18 @@ Architectural notes:
   allow.
 - **News-hounds** add a **momentum score** and feed candidates to the editor and
   the human creative; they propose, they do not auto-publish.
+- **Rights & licensing** agents negotiate and draft; **humans authorise** every
+  deal and payment. Introduces a **rights/licence ledger** (rights-holder, terms,
+  payment, attribution, usage scope) feeding an audit trail.
+- **Editor-in-chief / legal-clerk** roles are advisory and gatekeeping under
+  human authority; legal clerks escalate genuine legal questions to humans.
+- **Advertising** roles, if adopted, are isolated behind an
+  **editorial–advertising separation** boundary and never read or influence the
+  significance/selection logic.
+- **Translation** and **accessibility** roles act as post-processors over the
+  edited content: translation preserves meaning/attribution and flags
+  uncertainty; accessibility enriches assets (alt-text, captions, transcripts)
+  and checks against guidelines before the human review gate.
 
 ## 14. Human-in-the-loop & governance
 
@@ -214,3 +233,14 @@ control, not just a policy:
   anomaly detection, conduct), so the human creative need not be technically
   savvy to trust the pipeline. This automates *oversight of agents*, never
   *authorship* or *publishing*.
+
+## 15. Shared values & ethical principles
+
+Every role inherits one set of values (full statement in BRD §15): **Human AND
+machine** (partnership, not replacement); human authorship & oversight; **fair
+compensation** and creator respect; consent & privacy; sourcing integrity;
+**editorial independence** from advertising; accessibility & inclusion;
+transparency & auditability; lawfulness; and oversight (not automation) of
+judgement. These are enforced as controls — e.g. the human review gate, the
+outreach gate, the rights/licence ledger, and the editorial–advertising
+separation boundary — not merely stated as policy.

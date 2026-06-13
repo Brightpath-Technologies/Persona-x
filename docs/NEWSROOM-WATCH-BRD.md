@@ -4,7 +4,7 @@
 |---|---|
 | **Document** | Business Requirements Document |
 | **Product** | Newsroom Watch |
-| **Version** | 0.2 (draft) |
+| **Version** | 0.3 (draft) |
 | **Owner** | victorycross@gmail.com (Brightpath Technologies) |
 | **Status** | Draft — for review |
 | **Last updated** | 13 June 2026 |
@@ -174,8 +174,41 @@ This is a foundational principle, not a feature toggle.
 | FUT3 | **News-hound sub-agents** shall proactively detect rising stories on watched topics and surface candidates, so a news cycle need not be started manually. | Could |
 | FUT4 | **Second-line QA by Anthropic Fable managed agents** shall audit agent behaviour and outputs so the human creative need not be technical. | Could |
 | FUT5 | The human-in-the-loop review gate (§13) shall be explicit in any publishing workflow. | Must (when publishing is added) |
+| FUT6 | **Media-contributor specialists** (e.g. human photographers/illustrators) shall be held in the contact roster as paid contributors of original, rights-cleared media. | Could |
+| FUT7 | **Rights & licensing sub-agents** shall identify rights-holders and negotiate fair, real payment terms and draft licences for use of people's media and art; humans authorise every deal and payment. | Could |
+| FUT8 | An **editor-in-chief ("J. Jonah Jameson") role** shall enforce editorial standards, house style, and the significance bar under human authority. | Could |
+| FUT9 | **Legal-clerk sub-agents** shall handle rights clearance, permissions/contract drafting, attribution and fair-use/defamation flags as clerks (not counsel), escalating real legal questions to humans. | Could |
+| FUT10 | **Advertising/sponsorship sub-agents** (conditional) shall be adopted only with a hard editorial–advertising separation and disclosure of sponsored material. | Could |
+| FUT11 | **Translation & localisation sub-agents** shall translate sources/outputs with fidelity checks and flag uncertain translations for human review. | Could |
+| FUT12 | **Accessibility sub-agents** shall make outputs accessible by default (alt-text, captions/transcripts, plain-language, screen-reader-friendly structure; WCAG-aligned). | Could |
 
-## 15. Glossary
+## 15. Values & ethical principles (shared by every role)
+
+All sub-agents and specialists — present and future — operate under one set of
+values. New roles inherit these; they are not optional.
+
+1. **Human AND machine** — a partnership: agents amplify the human creative;
+   authorship and judgement stay human.
+2. **Human authorship & oversight** — no autonomous publication; a human
+   assembles, reviews, and signs off.
+3. **Fair compensation & creator respect** — media, art, and contributions are
+   licensed and paid for fairly, with proper attribution; nothing is used
+   without a cleared licence.
+4. **Consent & privacy** — engage human sources/contributors with consent;
+   honour do-not-contact; respect privacy and communications law.
+5. **Truth & sourcing integrity** — no fabrication; cite real sources; verify.
+6. **Editorial independence** — advertising/sponsorship never sways editorial
+   judgement; sponsored material is disclosed.
+7. **Accessibility & inclusion** — outputs are accessible by default and can be
+   faithfully translated/localised.
+8. **Transparency & auditability** — every contact, deal, payment, and editorial
+   decision is logged and reviewable.
+9. **Lawfulness** — operate within copyright, privacy, communications, and
+   advertising law.
+10. **Oversight, not automation, of judgement** — future managed-agent QA
+    automates oversight of agent behaviour, never authorship or publishing.
+
+## 16. Glossary
 - **Beat** — a topic area covered by one reporter agent.
 - **Desk / reporter** — the independent agent that researches one beat.
 - **Wire editor** — the deterministic step that collates, filters, de-dupes,

@@ -4,7 +4,7 @@
 |---|---|
 | **Document** | Evolution Roadmap & Backlog |
 | **Product** | Newsroom Watch |
-| **Version** | 0.2 (draft) |
+| **Version** | 0.3 (draft) |
 | **Owner** | victorycross@gmail.com (Brightpath Technologies) |
 | **Status** | Draft — for review |
 | **Last updated** | 13 June 2026 |
@@ -119,6 +119,58 @@ so a news cycle need not be kicked off manually for a topic.
 - **Considerations:** momentum scoring; avoiding hype/false positives; tunable
   sensitivity; tie-in to the per-beat significance bar.
 
+### 5.4 Media-contributor specialists (e.g. human photographers)
+Human creators — photographers, videographers, illustrators, artists — held in
+the contact roster as **paid contributors** of original imagery and media,
+alongside the human commentary sources in §5.2.
+- **Purpose:** source original, rights-cleared visual/media content rather than
+  relying on stock or uncredited material.
+- **Behaviour:** match a story to suitable contributors; brief them; route their
+  work to the rights/licensing role (§5.5) for terms and to the human creative
+  for selection.
+
+### 5.5 Rights & licensing ("deals") sub-agents
+Sub-agents that discover rights-holders and **negotiate real, fair payment terms**
+for the use of people's media and art.
+- **Purpose:** ensure nothing is used without a cleared, paid licence, and that
+  creators are compensated fairly.
+- **Capabilities:** identify rights-holders; propose and negotiate terms; draft
+  licensing agreements; track usage rights, attribution, and royalties.
+- **Guardrails:** agents **negotiate and draft; humans authorise** every deal and
+  payment. No use of media/art without a cleared licence. Full audit trail.
+
+### 5.6 Editorial-chief and legal-clerk roles
+- **Editor-in-chief ("J. Jonah Jameson") role** — an editorial-standards agent
+  that assigns, pushes for sharper angles, enforces house style and the
+  significance bar, and gatekeeps quality — **under human authority**. It
+  pressures and proposes; the human decides.
+- **Legal clerks** — act as **clerks, not counsel**: rights clearance, permission
+  and contract drafting, attribution and fair-use/defamation flags, and
+  recordkeeping. Genuine legal questions escalate to a human / qualified counsel.
+
+### 5.7 Advertising / sponsorship sub-agents (conditional)
+Optional roles for sponsorship sourcing or ad placement, included **only with a
+hard editorial–advertising separation**: advertising never influences editorial
+selection, significance, or content. Adopt only where it fits the service's
+integrity, with clear disclosure of sponsored material.
+
+### 5.8 Translation & localisation specialists
+Sub-agents that translate source material and outputs, and localise for a target
+audience.
+- **Purpose:** widen coverage to non-English sources and make editions readable
+  for different audiences/markets.
+- **Behaviour:** translate with fidelity checks; preserve meaning, nuance, and
+  attribution; flag uncertain translations for human review rather than guessing.
+
+### 5.9 Accessibility specialists
+Sub-agents that make outputs accessible by default.
+- **Purpose:** ensure every edition and asset is usable by people with
+  disabilities.
+- **Behaviour:** generate alt-text for images, captions/transcripts for media,
+  plain-language alternatives, and screen-reader-friendly structure; check
+  against recognised accessibility guidelines (e.g. WCAG) and flag gaps for the
+  human creative.
+
 ## 6. Operating principle — the newsroom in your pocket (human-in-the-loop)
 
 **The entire "newsroom in your pocket" is explicitly *not* intended for fully
@@ -162,3 +214,33 @@ automated oversight (not automated publishing) is how we scale trust.
   in pilot.
 - Centrally hosted; editions reliably delivered twice daily without a laptop.
 - Beats managed as configuration; a shareable dashboard for the team.
+
+## 9. Values & ethical principles (shared by every role)
+
+Every sub-agent and specialist — present and future — operates under the same
+set of values. New roles inherit these; they are not optional.
+
+1. **Human AND machine.** The system is a partnership: agents amplify the human
+   creative, they do not replace them. Authorship, judgement, and the final
+   message stay human; agents do the legwork and the oversight.
+2. **Human authorship & oversight.** No autonomous publication. A human
+   assembles, reviews, and signs off; nothing reaches an audience unreviewed.
+3. **Fair compensation & creator respect.** People's media, art, and
+   contributions are licensed and **paid for fairly**; nothing is used without a
+   cleared licence and proper attribution.
+4. **Consent & privacy.** Human sources and contributors are engaged with
+   consent; honour do-not-contact; respect privacy and communications law.
+5. **Truth & sourcing integrity.** No fabrication; cite real sources; verify
+   before publishing.
+6. **Editorial independence.** Advertising and sponsorship never influence
+   editorial selection, significance, or content; sponsored material is
+   disclosed.
+7. **Accessibility & inclusion.** Outputs are accessible by default and can be
+   localised/translated faithfully for their audience.
+8. **Transparency & auditability.** Every contact, deal, payment, and editorial
+   decision is logged and reviewable.
+9. **Lawfulness.** Operate within applicable law — copyright, privacy,
+   communications, and advertising standards.
+10. **Oversight, not automation, of judgement.** Future Anthropic Fable managed
+    agents automate *oversight* of agent behaviour (so the human need not be
+    technical) — never authorship or publishing.
