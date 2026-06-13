@@ -3,7 +3,13 @@
 A small launchd-driven "newsroom" that polls the web for significant news on a
 few beats, dedupes against local state, and publishes a **Morning** and
 **Afternoon** edition — each dropped into Google Drive with a macOS
-notification. A rolling Obsidian digest of everything seen is also kept.
+notification. It also regenerates a self-contained **dashboard**
+(`Newsroom Watch — Dashboard.html`) in the same Drive folder, showing each
+beat, every edition, and the releases published. A rolling Obsidian digest of
+everything seen is also kept.
+
+Only items published within the last **7 days** are reported (configurable via
+`MAX_AGE_DAYS`).
 
 > For a non-technical, team-shareable overview of the approach, see
 > [`docs/NEWSROOM-WATCH-EXECUTIVE-SUMMARY.md`](../docs/NEWSROOM-WATCH-EXECUTIVE-SUMMARY.md).
@@ -109,6 +115,8 @@ The script keeps everything under `~/.fable-mythos-watch/`:
 
 - `seen.json` — URLs already reported, so you are not notified twice.
 - `desk-*.json` — the latest raw filing from each desk (handy for debugging).
+- `history.jsonl` — one record per run (beats, counts, published items); the
+  dashboard is built from this.
 - `watch.log` — timestamped run log, including per-desk item counts.
 
 launchd's own stdout/stderr land in `/tmp/fable-mythos-watch.{out,err}.log`.
@@ -123,8 +131,12 @@ plist's `EnvironmentVariables` or inline when testing.
   clock (before noon = Morning). Change the hours in the plist to retime them.
 - **Quiet days:** `PUBLISH_EMPTY` (default `true`) publishes an edition even with
   no new items; set `false` to stay silent on a slow news cycle.
-- **Model / token cost:** `REPORTER_MODEL` (default `haiku`). Bump to `sonnet`
-  for sharper judgement at higher cost. The editor is always pure jq.
+- **Model / token cost:** `REPORTER_MODEL` (default `sonnet` for well-grounded,
+  cited results). Drop to `haiku` for lower cost if you accept a higher
+  hallucination risk. The editor is always pure jq.
+- **Recency window:** `MAX_AGE_DAYS` (default `7`) drops anything published more
+  than this many days ago. The desks are told the window and the editor enforces
+  it from each item's `published` (ISO `YYYY-MM-DD`) date.
 - **Per-desk caps:** `DESK_MAX_TURNS` (default `8`) and `DESK_MAX_ITEMS`
   (default `6`) bound each desk's work.
 - **Significance floor:** `SIGNIFICANCE_FLOOR` (default `medium`) drops anything
