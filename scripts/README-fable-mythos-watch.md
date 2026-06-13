@@ -1,8 +1,12 @@
 # Newsroom Watch — Fable/Mythos Export Control + AI
 
 A small launchd-driven "newsroom" that polls the web for significant news on a
-few beats, dedupes against local state, appends fresh items to an Obsidian note,
-and fires a macOS notification.
+few beats, dedupes against local state, and publishes a **Morning** and
+**Afternoon** edition — each dropped into Google Drive with a macOS
+notification. A rolling Obsidian digest of everything seen is also kept.
+
+> For a non-technical, team-shareable overview of the approach, see
+> [`docs/NEWSROOM-WATCH-EXECUTIVE-SUMMARY.md`](../docs/NEWSROOM-WATCH-EXECUTIVE-SUMMARY.md).
 
 It is built for **minimal token use**. Several reporter **desks** run in
 parallel, each as its own headless `claude` sub-agent on a small, cheap model
@@ -60,8 +64,11 @@ identical, so the editor needs no changes.
 
 ## Setup
 
-1. **Edit the two paths at the top of `fable-mythos-watch.sh`:**
-   - `OBSIDIAN_NOTE` — where the running digest should live in your vault.
+1. **Edit the paths at the top of `fable-mythos-watch.sh`:**
+   - `OBSIDIAN_NOTE` — where the rolling digest should live in your vault.
+   - `GDRIVE_DIR` — your Google Drive folder for editions. With Google Drive for
+     Desktop installed, find it under `~/Library/CloudStorage/` (e.g.
+     `~/Library/CloudStorage/GoogleDrive-you@gmail.com/My Drive/Newsroom Watch`).
    - `CLAUDE_BIN` — the absolute path to your `claude` binary (`which claude`).
 
 2. **Make the script executable:**
@@ -111,8 +118,11 @@ launchd's own stdout/stderr land in `/tmp/fable-mythos-watch.{out,err}.log`.
 All of these are environment variables with sensible defaults — set them in the
 plist's `EnvironmentVariables` or inline when testing.
 
-- **Frequency:** change `StartInterval` in the plist (seconds). Default is
-  `14400` (every 4 hours).
+- **Editions / schedule:** the plist fires at 07:00 (Morning) and 15:00
+  (Afternoon) via `StartCalendarInterval`; the script names the edition from the
+  clock (before noon = Morning). Change the hours in the plist to retime them.
+- **Quiet days:** `PUBLISH_EMPTY` (default `true`) publishes an edition even with
+  no new items; set `false` to stay silent on a slow news cycle.
 - **Model / token cost:** `REPORTER_MODEL` (default `haiku`). Bump to `sonnet`
   for sharper judgement at higher cost. The editor is always pure jq.
 - **Per-desk caps:** `DESK_MAX_TURNS` (default `8`) and `DESK_MAX_ITEMS`

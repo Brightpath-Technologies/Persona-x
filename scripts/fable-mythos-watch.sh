@@ -1,14 +1,18 @@
 #!/bin/bash
 #
 # fable-mythos-watch.sh
-# A minimal-token "newsroom" watcher.
+# A minimal-token "newsroom" watcher that publishes twice-daily editions.
 #
 # Several reporter "desks" run in parallel, each as its own headless Claude Code
 # process (a separate sub-agent context) on a small, cheap model. A pure-jq
 # "wire editor" then collates every desk's filing: it dedupes against local
 # state, drops anything below a significance floor, and orders official releases
-# and higher-significance items first. New items are appended to an Obsidian
-# note (grouped by beat) and summarised in one macOS notification.
+# and higher-significance items first.
+#
+# Each run publishes an EDITION (Morning or Afternoon, derived from the clock):
+#   - a Markdown paper dropped into your Google Drive folder, and
+#   - a macOS notification.
+# It also keeps a rolling Obsidian digest of everything seen.
 #
 # Desks currently staffed:
 #   1. Fable 5 / Mythos 5 US export-control story (incl. direct Anthropic releases)
@@ -16,17 +20,22 @@
 #
 # Add a desk: write a *_PROMPT and add one run_desk line in the NEWSROOM block.
 #
-# Designed to run unattended via launchd (see com.persona-x.fable-mythos-watch.plist).
+# Designed to run twice daily via launchd (see com.persona-x.fable-mythos-watch.plist).
 # Uses your existing Claude Code authentication. No API key needed.
 
 set -euo pipefail
 
 # ---------------------------------------------------------------------------
-# CONFIG. Edit these two paths to match your machine.
+# CONFIG. Edit these paths to match your machine.
 # ---------------------------------------------------------------------------
 
-# Where the running digest lives. Point this at your vault.
+# Rolling digest in your Obsidian vault (everything seen, appended over time).
 OBSIDIAN_NOTE="${HOME}/Obsidian/MainVault/00-Inbox/fable-mythos-watch.md"
+
+# Google Drive folder for the published editions. With Google Drive for Desktop
+# installed, files written here sync automatically. Set this to your account's
+# path (find it under ~/Library/CloudStorage/).
+GDRIVE_DIR="${GDRIVE_DIR:-${HOME}/Library/CloudStorage/GoogleDrive-your.account@gmail.com/My Drive/Newsroom Watch}"
 
 # Full path to the claude binary. Find yours with: which claude
 # launchd does not inherit your shell PATH, so hardcode it.
@@ -48,6 +57,9 @@ DESK_MAX_ITEMS="${DESK_MAX_ITEMS:-6}"
 MAX_ITEMS="${MAX_ITEMS:-10}"                          # cap after collation
 SIGNIFICANCE_FLOOR="${SIGNIFICANCE_FLOOR:-medium}"    # drop below this: low|medium|high
 
+# Publish an edition even on a quiet news cycle (true), or stay silent (false).
+PUBLISH_EMPTY="${PUBLISH_EMPTY:-true}"
+
 # ---------------------------------------------------------------------------
 # Internal state. You should not need to touch anything below.
 # ---------------------------------------------------------------------------
@@ -59,14 +71,20 @@ LOG_FILE="${STATE_DIR}/watch.log"
 mkdir -p "${STATE_DIR}"
 mkdir -p "$(dirname "${OBSIDIAN_NOTE}")"
 [ -f "${SEEN_FILE}" ] || echo "[]" > "${SEEN_FILE}"
-[ -f "${OBSIDIAN_NOTE}" ] || printf '# Fable 5 / Mythos 5 + AI Newsroom Watch\n\nAutomated digest. New items appended below.\n' > "${OBSIDIAN_NOTE}"
+[ -f "${OBSIDIAN_NOTE}" ] || printf '# Newsroom Watch — rolling digest\n\nAutomated. New items appended below; formal editions go to Google Drive.\n' > "${OBSIDIAN_NOTE}"
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S')  $*" >> "${LOG_FILE}"; }
 
-log "run started (model=${REPORTER_MODEL}, floor=${SIGNIFICANCE_FLOOR})"
+# Which edition is this? Derived from the clock unless EDITION is set.
+DATE="$(date '+%Y-%m-%d')"
+DATE_LONG="$(date '+%A, %d %B %Y')"
+if [ -z "${EDITION:-}" ]; then
+  if [ "$((10#$(date '+%H')))" -lt 12 ]; then EDITION="Morning"; else EDITION="Afternoon"; fi
+fi
 
-# Shared output contract, kept DRY across desks. Each desk tags significance and
-# whether an item is an official release from the organisation it concerns.
+log "run started (${EDITION} edition, model=${REPORTER_MODEL}, floor=${SIGNIFICANCE_FLOOR})"
+
+# Shared output contract, kept DRY across desks.
 JSON_CONTRACT="Return ONLY a raw JSON array and nothing else. No prose, no \
 markdown, no code fences. Each element must be an object with exactly these \
 keys: title, url, source, summary, published, official, significance. summary \
@@ -82,8 +100,9 @@ EXPORT_PROMPT="Search the web for the most recent developments, as of right \
 now, on the US government export control directive against Anthropic's Claude \
 Fable 5 and Claude Mythos 5 models (the suspension that began June 12 2026). \
 Substantive updates only: official statements, government action, reinstatement \
-news, legal or policy analysis, congressional response. Skip rehashes of the \
-initial shutdown. Pay special attention to news releases published by Anthropic \
+news, legal or policy analysis, congressional response, and any legal, \
+oversight, or investigative developments. Skip rehashes of the initial \
+shutdown. Pay special attention to news releases published by Anthropic \
 directly (anthropic.com/news, the Anthropic newsroom or blog). Rate \
 significance relative to routine releases: 'high' if it materially changes the \
 export-control situation or is an official Anthropic response, 'medium' if it \
@@ -167,44 +186,69 @@ NEW_ITEMS="$(jq -n \
 ')"
 
 NEW_COUNT="$(echo "${NEW_ITEMS}" | jq 'length')"
+log "${NEW_COUNT} new item(s) for the ${EDITION} edition"
 
-if [ "${NEW_COUNT}" -eq 0 ]; then
-  log "no new items clearing the bar"
+if [ "${NEW_COUNT}" -eq 0 ] && [ "${PUBLISH_EMPTY}" != "true" ]; then
+  log "no new items and PUBLISH_EMPTY=false — no edition published"
   exit 0
 fi
 
-log "${NEW_COUNT} new item(s)"
-
-# Append a dated block to the Obsidian note, grouped by beat.
-STAMP="$(date '+%Y-%m-%d %H:%M')"
-{
-  echo ""
-  echo "## ${STAMP}"
-  echo "${NEW_ITEMS}" | jq -r '
+# Render the edition body (grouped by beat), or a quiet-day note.
+if [ "${NEW_COUNT}" -gt 0 ]; then
+  BODY="$(echo "${NEW_ITEMS}" | jq -r '
     group_by(.beat)[] |
-    ( "\n### \(.[0].beat)" ),
+    ( "\n## \(.[0].beat)" ),
     ( .[] |
-      "\n#### \(if .official == true then "[Official] " else "" end)\(.title)\n- Source: \(.source)\(if .official == true then " (official release)" else "" end)\n- Published: \(.published)\n- Significance: \(.significance // "unknown")\n- \(.url)\n\n\(.summary)" )
-  '
-} >> "${OBSIDIAN_NOTE}"
-
-# Record the new URLs as seen.
-jq -s '.[0] + (.[1] | map(.url)) | unique' "${SEEN_FILE}" <(echo "${NEW_ITEMS}") > "${SEEN_FILE}.tmp"
-mv "${SEEN_FILE}.tmp" "${SEEN_FILE}"
-
-# Fire one macOS notification. Items are already ordered with official and
-# higher-significance entries first, so the first item is the headline.
-FIRST_TITLE="$(echo "${NEW_ITEMS}" | jq -r '.[0].title')"
-FIRST_FLAG="$(echo "${NEW_ITEMS}" | jq -r 'if (.[0].official == true) then "[Official] " elif (.[0].significance == "high") then "[Significant] " else "" end')"
-OFFICIAL_COUNT="$(echo "${NEW_ITEMS}" | jq '[ .[] | select(.official == true) ] | length')"
-if [ "${NEW_COUNT}" -eq 1 ]; then
-  NOTE_BODY="${FIRST_FLAG}${FIRST_TITLE}"
+      "\n### \(if .official == true then "[Official] " else "" end)\(.title)\n- Source: \(.source)\(if .official == true then " (official release)" else "" end)\n- Published: \(.published)\n- Significance: \(.significance // "unknown")\n- \(.url)\n\n\(.summary)" )
+  ')"
 else
-  NOTE_BODY="${NEW_COUNT} new items (${OFFICIAL_COUNT} official). Latest: ${FIRST_FLAG}${FIRST_TITLE}"
+  BODY=$'\n_No new significant items this edition._'
 fi
+
+# --- Publish the edition to Google Drive -----------------------------------
+EDITION_FILE="${GDRIVE_DIR}/Newsroom Watch ${DATE} — ${EDITION} Edition.md"
+DRIVE_OK=0
+if mkdir -p "${GDRIVE_DIR}" 2>>"${LOG_FILE}"; then
+  {
+    echo "# Newsroom Watch — ${EDITION} Edition"
+    echo ""
+    echo "**${DATE_LONG}**  ·  significance floor: ${SIGNIFICANCE_FLOOR}  ·  ${NEW_COUNT} item(s)"
+    echo ""
+    echo "Beats: Fable/Mythos export control · PwC Canada & competitors (AI)"
+    echo "${BODY}"
+  } > "${EDITION_FILE}"
+  DRIVE_OK=1
+  log "edition filed to Drive: ${EDITION_FILE}"
+else
+  log "GDRIVE_DIR unavailable — edition not saved to Drive"
+fi
+
+# --- Update the rolling Obsidian digest + seen list (only when there's news) -
+if [ "${NEW_COUNT}" -gt 0 ]; then
+  STAMP="$(date '+%Y-%m-%d %H:%M')"
+  {
+    echo ""
+    echo "## ${STAMP} — ${EDITION} edition"
+    echo "${BODY}"
+  } >> "${OBSIDIAN_NOTE}"
+
+  jq -s '.[0] + (.[1] | map(.url)) | unique' "${SEEN_FILE}" <(echo "${NEW_ITEMS}") > "${SEEN_FILE}.tmp"
+  mv "${SEEN_FILE}.tmp" "${SEEN_FILE}"
+fi
+
+# --- One macOS notification summarising the edition ------------------------
+if [ "${NEW_COUNT}" -gt 0 ]; then
+  FIRST_TITLE="$(echo "${NEW_ITEMS}" | jq -r '.[0].title')"
+  FIRST_FLAG="$(echo "${NEW_ITEMS}" | jq -r 'if (.[0].official == true) then "[Official] " elif (.[0].significance == "high") then "[Significant] " else "" end')"
+  OFFICIAL_COUNT="$(echo "${NEW_ITEMS}" | jq '[ .[] | select(.official == true) ] | length')"
+  NOTE_BODY="${NEW_COUNT} items (${OFFICIAL_COUNT} official). Top: ${FIRST_FLAG}${FIRST_TITLE}"
+else
+  NOTE_BODY="No new significant items today."
+fi
+[ "${DRIVE_OK}" -eq 1 ] && NOTE_BODY="${NOTE_BODY} · saved to Google Drive"
 
 # Escape double quotes for AppleScript.
 NOTE_BODY_ESCAPED="$(echo "${NOTE_BODY}" | sed 's/"/\\"/g')"
-osascript -e "display notification \"${NOTE_BODY_ESCAPED}\" with title \"Newsroom Watch\" sound name \"Submarine\""
+osascript -e "display notification \"${NOTE_BODY_ESCAPED}\" with title \"Newsroom Watch — ${EDITION} Edition\" sound name \"Submarine\""
 
-log "run complete, notified"
+log "run complete, ${EDITION} edition published"

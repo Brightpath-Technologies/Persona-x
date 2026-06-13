@@ -15,17 +15,38 @@
         <string>/REPLACE/WITH/ABSOLUTE/PATH/scripts/fable-mythos-watch.sh</string>
     </array>
 
-    <!-- Run every 4 hours (14400 seconds). Adjust to taste. -->
-    <key>StartInterval</key>
-    <integer>14400</integer>
+    <!-- Twice-daily editions: 07:00 (Morning) and 15:00 (Afternoon) local time.
+         The script derives the edition name from the clock, so these two times
+         produce the Morning and Afternoon papers. Adjust the hours to taste. -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>7</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>15</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
 
-    <!-- Also run once immediately when the agent is loaded. -->
+    <!-- Run once when the agent is loaded (handy for the first install). -->
     <key>RunAtLoad</key>
     <true/>
 
     <!-- launchd does not inherit your login shell PATH. Give the job a sane
          PATH so it can find claude, jq, osascript, etc. Adjust if your
-         tools live elsewhere (check with: which jq claude). -->
+         tools live elsewhere (check with: which jq claude).
+
+         You can also pin script settings here, e.g. add:
+             <key>GDRIVE_DIR</key>
+             <string>/Users/you/Library/CloudStorage/GoogleDrive-you@gmail.com/My Drive/Newsroom Watch</string>
+             <key>REPORTER_MODEL</key><string>haiku</string>
+             <key>SIGNIFICANCE_FLOOR</key><string>medium</string> -->
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
