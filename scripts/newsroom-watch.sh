@@ -43,6 +43,14 @@ OBSIDIAN_NOTE="${HOME}/Obsidian/MainVault/00-Inbox/newsroom-watch.md"
 # ~/Library/CloudStorage/.
 GDRIVE_DIR="${GDRIVE_DIR:-${HOME}/Library/CloudStorage/GoogleDrive-your.account@gmail.com/My Drive/Newsroom Watch}"
 
+# Universal Feed direct ingest (producer integration). When a URL + token are
+# set, each edition is POSTed straight to the feed's /api/ingest endpoint — no
+# Google Drive round-trip needed. The token is read from FEED_TOKEN_FILE (kept
+# out of any repo) when not provided via the environment. Leave the token empty
+# to disable the integration.
+FEED_INGEST_URL="${FEED_INGEST_URL:-https://feed.brightpathtechnology.io/api/ingest}"
+FEED_INGEST_TOKEN="${FEED_INGEST_TOKEN:-}"
+
 # Full path to the claude binary. Find yours with: which claude
 # launchd does not inherit your shell PATH, so hardcode it.
 CLAUDE_BIN="${HOME}/.local/bin/claude"
@@ -84,6 +92,12 @@ DASHBOARD_FILE="${GDRIVE_DIR}/Newsroom Watch — Dashboard.html"
 mkdir -p "${STATE_DIR}"
 mkdir -p "$(dirname "${OBSIDIAN_NOTE}")"
 [ -f "${SEEN_FILE}" ] || echo "[]" > "${SEEN_FILE}"
+
+# Read the feed ingest token from a local file if not set in the environment.
+FEED_TOKEN_FILE="${FEED_TOKEN_FILE:-${STATE_DIR}/feed-token}"
+if [ -z "${FEED_INGEST_TOKEN}" ] && [ -f "${FEED_TOKEN_FILE}" ]; then
+  FEED_INGEST_TOKEN="$(cat "${FEED_TOKEN_FILE}")"
+fi
 [ -f "${OBSIDIAN_NOTE}" ] || printf '# Newsroom Watch — rolling digest\n\nAutomated. New items appended below; editions and the dashboard go to Google Drive.\n' > "${OBSIDIAN_NOTE}"
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S')  $*" >> "${LOG_FILE}"; }
@@ -376,24 +390,45 @@ fi
 # Dynamic beats line for the edition header.
 BEATS_LINE="$(printf '%s · ' "${BEAT_NAMES[@]}")"; BEATS_LINE="${BEATS_LINE% · }"
 
-# --- Publish the (draft) edition to Google Drive ---------------------------
+# --- Assemble the (draft) edition markdown ---------------------------------
+EDITION_MD="$(
+  echo "# Newsroom Watch — ${EDITION} Edition (Draft)"
+  echo ""
+  echo "> **DRAFT — for human review.** Assembled by agents; nothing here is published to an audience until a human reviews, edits, and signs off."
+  echo ""
+  echo "**${DATE_LONG}**  ·  significance floor: per-beat (default ${SIGNIFICANCE_FLOOR})  ·  ${NEW_COUNT} item(s)"
+  echo ""
+  echo "Beats: ${BEATS_LINE}"
+  echo "${BODY}"
+)"
+
+# --- Publish the (draft) edition to Google Drive (if a synced folder exists) -
 EDITION_FILE="${GDRIVE_DIR}/Newsroom Watch ${DATE} — ${EDITION} Edition (Draft).md"
 DRIVE_OK=0
 if mkdir -p "${GDRIVE_DIR}" 2>>"${LOG_FILE}"; then
-  {
-    echo "# Newsroom Watch — ${EDITION} Edition (Draft)"
-    echo ""
-    echo "> **DRAFT — for human review.** Assembled by agents; nothing here is published to an audience until a human reviews, edits, and signs off."
-    echo ""
-    echo "**${DATE_LONG}**  ·  significance floor: per-beat (default ${SIGNIFICANCE_FLOOR})  ·  ${NEW_COUNT} item(s)"
-    echo ""
-    echo "Beats: ${BEATS_LINE}"
-    echo "${BODY}"
-  } > "${EDITION_FILE}"
+  printf '%s\n' "${EDITION_MD}" > "${EDITION_FILE}"
   DRIVE_OK=1
   log "draft edition filed to Drive: ${EDITION_FILE}"
 else
   log "GDRIVE_DIR unavailable — edition not saved to Drive"
+fi
+
+# --- Push the edition straight into the Universal Feed (direct ingest) -------
+FEED_OK=0
+if [ -n "${FEED_INGEST_URL}" ] && [ -n "${FEED_INGEST_TOKEN}" ] && [ "${NEW_COUNT}" -gt 0 ]; then
+  feed_payload="$(jq -n --arg c "${EDITION_MD}" \
+    --arg fn "Newsroom Watch ${DATE} — ${EDITION}.md" \
+    '{format:"markdown-edition", connector:"watch-script", filename:$fn, content:$c}')"
+  feed_resp="$(curl -s -X POST "${FEED_INGEST_URL}" \
+    -H "Authorization: Bearer ${FEED_INGEST_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "${feed_payload}" 2>>"${LOG_FILE}")" || feed_resp=""
+  if echo "${feed_resp}" | jq -e '.ok == true' >/dev/null 2>&1; then
+    FEED_OK=1
+    log "feed ingest ok: ${feed_resp}"
+  else
+    log "feed ingest failed or empty response: ${feed_resp}"
+  fi
 fi
 
 # --- Update the rolling Obsidian digest + seen list (only when there's news) -
@@ -422,6 +457,7 @@ else
   NOTE_BODY="No new significant items today."
 fi
 [ "${DRIVE_OK}" -eq 1 ] && NOTE_BODY="${NOTE_BODY} · draft saved to Google Drive"
+[ "${FEED_OK}" -eq 1 ] && NOTE_BODY="${NOTE_BODY} · pushed to feed"
 
 NOTE_BODY_ESCAPED="$(echo "${NOTE_BODY}" | sed 's/"/\\"/g')"
 osascript -e "display notification \"${NOTE_BODY_ESCAPED}\" with title \"Newsroom Watch — ${EDITION} Draft\" sound name \"Submarine\""
