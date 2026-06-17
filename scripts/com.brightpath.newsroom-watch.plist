@@ -59,6 +59,11 @@
     <dict>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <!-- Pull the beats config from the feed app (the desks curated in
+             /manage). Remove this line to use the committed scripts/beats.json
+             instead; on any fetch failure the script falls back to it anyway. -->
+        <key>BEATS_URL</key>
+        <string>https://feed.brightpathtechnology.io/api/producer/beats</string>
     </dict>
 
     <!-- Capture stdout/stderr for debugging. The script keeps its own log

@@ -51,6 +51,12 @@ GDRIVE_DIR="${GDRIVE_DIR:-${HOME}/Library/CloudStorage/GoogleDrive-your.account@
 FEED_INGEST_URL="${FEED_INGEST_URL:-https://feed.brightpathtechnology.io/api/ingest}"
 FEED_INGEST_TOKEN="${FEED_INGEST_TOKEN:-}"
 
+# Optional: pull the beats config from the feed app (the DB-backed list curated
+# in /manage) instead of the static beats.json below. Reuses FEED_INGEST_TOKEN
+# as the bearer. Leave empty to use the committed local file. On any fetch
+# failure the script falls back to beats.json — see the block further down.
+BEATS_URL="${BEATS_URL:-}"
+
 # Full path to the claude binary. Find yours with: which claude
 # launchd does not inherit your shell PATH, so hardcode it.
 CLAUDE_BIN="${HOME}/.local/bin/claude"
@@ -101,6 +107,26 @@ fi
 [ -f "${OBSIDIAN_NOTE}" ] || printf '# Newsroom Watch — rolling digest\n\nAutomated. New items appended below; editions and the dashboard go to Google Drive.\n' > "${OBSIDIAN_NOTE}"
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S')  $*" >> "${LOG_FILE}"; }
+
+# --- Optional: pull beats from the feed app (DB-backed), with safe fallback ----
+# When BEATS_URL is set, GET it with the same bearer token used for ingest. If it
+# returns a non-empty .beats array, point BEATS_FILE at the cached copy. On ANY
+# failure (no token, curl error, non-2xx, invalid/empty JSON) fall back silently
+# to the committed beats.json — this stays independent of the feed app, and the
+# sanity-check below still guards whichever file we end up using.
+if [ -n "${BEATS_URL}" ] && [ -n "${FEED_INGEST_TOKEN}" ]; then
+  BEATS_REMOTE="${STATE_DIR}/beats-remote.json"
+  if curl -fsS -H "Authorization: Bearer ${FEED_INGEST_TOKEN}" "${BEATS_URL}" \
+       -o "${BEATS_REMOTE}" 2>>"${LOG_FILE}" \
+     && jq -e '.beats | type == "array" and length > 0' "${BEATS_REMOTE}" >/dev/null 2>&1; then
+    BEATS_FILE="${BEATS_REMOTE}"
+    log "beats: using remote config from ${BEATS_URL} ($(jq '.beats | length' "${BEATS_REMOTE}") beats)"
+  else
+    log "beats: remote fetch/validate failed; falling back to ${BEATS_FILE}"
+  fi
+elif [ -n "${BEATS_URL}" ]; then
+  log "beats: BEATS_URL set but no feed token available; using local ${BEATS_FILE}"
+fi
 
 # Sanity-check the beats config up front.
 if [ ! -f "${BEATS_FILE}" ]; then
