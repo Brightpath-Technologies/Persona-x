@@ -57,6 +57,10 @@ FEED_INGEST_TOKEN="${FEED_INGEST_TOKEN:-}"
 # failure the script falls back to beats.json — see the block further down.
 BEATS_URL="${BEATS_URL:-}"
 
+# Run report (the feed's operational activity log: "last updated" + updates feed).
+# Posted every run, success or not. Same bearer as ingest. Clear to disable.
+FEED_RUN_URL="${FEED_RUN_URL:-https://feed.brightpathtechnology.io/api/producer/run}"
+
 # Full path to the claude binary. Find yours with: which claude
 # launchd does not inherit your shell PATH, so hardcode it.
 CLAUDE_BIN="${HOME}/.local/bin/claude"
@@ -72,7 +76,7 @@ BEATS_FILE="${BEATS_FILE:-${SCRIPT_DIR}/beats.json}"
 # ---------------------------------------------------------------------------
 
 REPORTER_MODEL="${REPORTER_MODEL:-sonnet}"
-DESK_MAX_TURNS="${DESK_MAX_TURNS:-12}"
+DESK_MAX_TURNS="${DESK_MAX_TURNS:-18}"   # headroom so heavy-search desks finish (else output is cut to prose)
 DESK_MAX_ITEMS="${DESK_MAX_ITEMS:-6}"
 
 # Editor (pure jq) settings. SIGNIFICANCE_FLOOR and MAX_AGE_DAYS are GLOBAL
@@ -164,8 +168,10 @@ cutoff_for() {
 # rules. Takes the per-beat recency window (days) so each desk is told its own.
 build_contract() {
   local age="$1"
-  printf '%s' "Run several distinct web searches with varied phrasing before \
-concluding. Only include an item you actually found via web search and can cite \
+  printf '%s' "Run 3 to 6 focused web searches with varied phrasing, then STOP \
+searching and return your answer — do not keep searching indefinitely; you have a \
+limited number of steps and must leave room to output the final JSON. \
+Only include an item you actually found via web search and can cite \
 with a real, working URL — never invent, guess, or infer an item or a link. If \
 you are unsure an item is real, omit it. An empty result is acceptable and \
 preferred over a fabricated one.
@@ -174,7 +180,8 @@ RECENCY: only include items published within the last ${age} days. Omit anything
 older, even if significant.
 
 Return ONLY a raw JSON array and nothing else. No prose, no markdown, no code \
-fences. Each element must be an object with exactly these keys: title, url, \
+fences — the FIRST character of your response must be '[' and the LAST must be \
+']'. Each element must be an object with exactly these keys: title, url, \
 source, summary, published, official, significance. summary is one or two plain \
 sentences. published must be the publication date in ISO format YYYY-MM-DD \
 (your best estimate). official is a boolean, true only when the item is a \
@@ -191,24 +198,47 @@ you find nothing that clears the bar, return []."
 # ---------------------------------------------------------------------------
 run_desk() {
   local beat="$1" prompt="$2" out="$3"
-  local raw items
-  raw="$(
-    "${CLAUDE_BIN}" -p "${prompt}" \
-      --model "${REPORTER_MODEL}" \
-      --allowedTools "WebSearch" \
-      --max-turns "${DESK_MAX_TURNS}" \
-      --output-format json 2>>"${LOG_FILE}"
-  )" || { log "desk '${beat}' invocation failed"; echo "[]" > "${out}"; return 0; }
+  local raw items extracted subtype attempt try_prompt
+  rm -f "${out}.err"                       # clear any prior-run error marker
 
-  items="$(echo "${raw}" | jq -r '.result' | sed 's/^```json//; s/^```//; s/```$//')"
-  if ! echo "${items}" | jq empty >/dev/null 2>&1; then
-    log "desk '${beat}' returned invalid JSON, treating as empty"
-    echo "[]" > "${out}"
-    return 0
-  fi
+  # Up to 2 attempts: an agentic desk occasionally replies in prose instead of
+  # the required JSON array. A retry with a terser reminder clears most of those.
+  for attempt in 1 2; do
+    try_prompt="${prompt}"
+    [ "${attempt}" -eq 2 ] && try_prompt="${prompt} REMINDER: output a JSON array ONLY — no prose, no explanation. If nothing qualifies, output exactly []."
 
-  echo "${items}" | jq --arg beat "${beat}" '[ .[] | . + {beat: $beat} ]' > "${out}"
-  log "desk '${beat}' filed $(jq 'length' "${out}") item(s)"
+    raw="$(
+      "${CLAUDE_BIN}" -p "${try_prompt}" \
+        --model "${REPORTER_MODEL}" \
+        --allowedTools "WebSearch" \
+        --max-turns "${DESK_MAX_TURNS}" \
+        --output-format json 2>>"${LOG_FILE}"
+    )" || { log "desk '${beat}' invocation failed (attempt ${attempt})"; continue; }
+
+    items="$(echo "${raw}" | jq -r '.result' | sed 's/^```json//; s/^```//; s/```$//')"
+
+    # Tolerate prose-wrapped output: if it isn't already a JSON array, keep the
+    # substring from the first '[' to the last ']' and re-validate (never worse —
+    # invalid extractions still fall through).
+    if ! echo "${items}" | jq -e 'type=="array"' >/dev/null 2>&1; then
+      extracted="$(printf '%s' "${items}" | tr '\n' ' ' | sed -e 's/^[^[]*//' -e 's/[^]]*$//')"
+      echo "${extracted}" | jq -e 'type=="array"' >/dev/null 2>&1 && items="${extracted}"
+    fi
+
+    if echo "${items}" | jq -e 'type=="array"' >/dev/null 2>&1; then
+      echo "${items}" | jq --arg beat "${beat}" '[ .[] | . + {beat: $beat} ]' > "${out}"
+      log "desk '${beat}' filed $(jq 'length' "${out}") item(s)$([ "${attempt}" -eq 2 ] && printf ' (on retry)')"
+      return 0
+    fi
+
+    subtype="$(echo "${raw}" | jq -r '.subtype // "?"' 2>/dev/null)"
+    log "desk '${beat}' attempt ${attempt}: no usable JSON array (subtype=${subtype})"
+  done
+
+  # Both attempts failed — file empty, mark the error, and log a snippet to debug.
+  log "desk '${beat}' failed after 2 attempts; result snippet: $(echo "${raw}" | jq -r '.result // ""' 2>/dev/null | head -c 160 | tr '\n' ' ')"
+  echo "[]" > "${out}"; : > "${out}.err"
+  return 0
 }
 
 # ---------------------------------------------------------------------------
@@ -375,13 +405,20 @@ NEW_ITEMS="$(jq -n \
 NEW_COUNT="$(echo "${NEW_ITEMS}" | jq 'length')"
 log "${NEW_COUNT} new item(s) for the ${EDITION} edition (draft)"
 
-# Per-beat filed counts for the history record.
+# Per-beat filed counts for the history record + a structured report for the feed
+# activity log. status: error (desk failed) | ok (filed >0) | empty (filed 0).
 FILED_MAP="{}"
+BEATS_REPORT="[]"
 i=0
 while [ "${i}" -lt "${NUM_BEATS}" ]; do
   bname="${BEAT_NAMES[$i]}"; out="${DESK_FILES[$i]}"
   cnt="$(jq 'length' "${out}")"
   FILED_MAP="$(jq -c --arg n "${bname}" --argjson c "${cnt}" '. + {($n): $c}' <<<"${FILED_MAP}")"
+  if [ -f "${out}.err" ]; then bstatus="error"
+  elif [ "${cnt}" -gt 0 ]; then bstatus="ok"
+  else bstatus="empty"; fi
+  BEATS_REPORT="$(jq -c --arg n "${bname}" --argjson c "${cnt}" --arg s "${bstatus}" \
+    '. + [{name:$n, filed:$c, status:$s}]' <<<"${BEATS_REPORT}")"
   i=$((i+1))
 done
 
@@ -454,6 +491,31 @@ if [ -n "${FEED_INGEST_URL}" ] && [ -n "${FEED_INGEST_TOKEN}" ] && [ "${NEW_COUN
     log "feed ingest ok: ${feed_resp}"
   else
     log "feed ingest failed or empty response: ${feed_resp}"
+  fi
+fi
+
+# --- Report this run to the feed's activity log (every run, success or not) --
+if [ -n "${FEED_RUN_URL}" ] && [ -n "${FEED_INGEST_TOKEN}" ]; then
+  # Run-level ok: nothing to send, or the ingest succeeded.
+  if [ "${NEW_COUNT}" -eq 0 ] || [ "${FEED_OK}" -eq 1 ]; then run_ok=true; else run_ok=false; fi
+  run_errs="$(jq -r '[.[] | select(.status=="error") | .name] | join(", ")' <<<"${BEATS_REPORT}")"
+  run_note=""; [ -n "${run_errs}" ] && run_note="desk error: ${run_errs}"
+  run_payload="$(jq -n \
+    --arg edition "${EDITION}" \
+    --argjson ok "${run_ok}" \
+    --argjson new_items "${NEW_COUNT}" \
+    --argjson beats "${BEATS_REPORT}" \
+    --arg note "${run_note}" \
+    '{edition:$edition, ok:$ok, new_items:$new_items, beats:$beats,
+      note:(if $note=="" then null else $note end), source:"watch-script"}')"
+  run_resp="$(curl -s -X POST "${FEED_RUN_URL}" \
+    -H "Authorization: Bearer ${FEED_INGEST_TOKEN}" \
+    -H "Content-Type: application/json" \
+    -d "${run_payload}" 2>>"${LOG_FILE}")" || run_resp=""
+  if echo "${run_resp}" | jq -e '.ok == true' >/dev/null 2>&1; then
+    log "run report ok"
+  else
+    log "run report failed: ${run_resp}"
   fi
 fi
 
