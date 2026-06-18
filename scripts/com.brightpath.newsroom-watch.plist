@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Reverse-DNS label. Must be unique among your LaunchAgents. -->
+    <key>Label</key>
+    <string>com.brightpath.newsroom-watch</string>
+
+    <!-- What to run. Edit the second string to the absolute path of the
+         script on YOUR machine. launchd will not expand ~, so use a full
+         path like /Users/you/Persona-x/scripts/newsroom-watch.sh -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/REPLACE/WITH/ABSOLUTE/PATH/scripts/newsroom-watch.sh</string>
+    </array>
+
+    <!-- Three editions a day, like a traditional paper: 07:00 (Morning),
+         13:00 (Afternoon), and 19:00 (Final) local time. The script derives the
+         edition name from the clock (before noon = Morning, noon–18:00 =
+         Afternoon, 18:00+ = Final), so these three times produce the three
+         papers. Adjust the hours to taste. -->
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>7</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>13</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>19</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
+
+    <!-- Run once when the agent is loaded (handy for the first install). -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <!-- launchd does not inherit your login shell PATH. Give the job a sane
+         PATH so it can find claude, jq, osascript, etc. Adjust if your
+         tools live elsewhere (check with: which jq claude).
+
+         You can also pin script settings here, e.g. add:
+             <key>GDRIVE_DIR</key>
+             <string>/Users/you/Library/CloudStorage/GoogleDrive-you@gmail.com/My Drive/Newsroom Watch</string>
+             <key>REPORTER_MODEL</key><string>haiku</string>
+             <key>SIGNIFICANCE_FLOOR</key><string>medium</string> -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <!-- Pull the beats config from the feed app (the desks curated in
+             /manage). Remove this line to use the committed scripts/beats.json
+             instead; on any fetch failure the script falls back to it anyway. -->
+        <key>BEATS_URL</key>
+        <string>https://feed.brightpathtechnology.io/api/producer/beats</string>
+    </dict>
+
+    <!-- Capture stdout/stderr for debugging. The script keeps its own log
+         at ~/.newsroom-watch/watch.log; these catch anything else. -->
+    <key>StandardOutPath</key>
+    <string>/tmp/newsroom-watch.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/newsroom-watch.err.log</string>
+</dict>
+</plist>
