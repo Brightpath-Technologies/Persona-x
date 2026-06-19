@@ -1,5 +1,5 @@
 {
-  "_comment": "Newsroom Watch beats, as config. Edit this file to add/remove/retune beats — no code change needed. Each beat: id (slug, used for the desk-<id>.json filename), name (display + tag), optional max_age_days (per-beat recency window; falls back to the global MAX_AGE_DAYS), optional significance_floor (low|medium|high; falls back to the global SIGNIFICANCE_FLOOR), and prompt (the desk's instruction; the shared anti-fabrication JSON contract is appended automatically). Parsed with jq — no new dependency.",
+  "_comment": "Newsroom Watch beats, as config. Edit this file to add/remove/retune beats — no code change needed. Each beat: id (slug, used for the desk-<id>.json filename), name (display + tag), optional max_age_days (per-beat recency window; falls back to the global MAX_AGE_DAYS), optional significance_floor (low|medium|high; falls back to the global SIGNIFICANCE_FLOOR), optional official_only (boolean; when true the wire editor keeps only official releases for this beat — falls back to the global OFFICIAL_ONLY, default false), and prompt (the desk's instruction; the shared anti-fabrication JSON contract is appended automatically). Parsed with jq — no new dependency.",
   "beats": [
     {
       "id": "export",
@@ -13,6 +13,7 @@
       "name": "PwC Canada & competitors (AI)",
       "max_age_days": 14,
       "significance_floor": "medium",
+      "official_only": true,
       "prompt": "Search the web for the most recent, significant AI developments involving PwC Canada and its main competitors: the other Big Four firms in Canada (Deloitte Canada, KPMG Canada, EY Canada) and major consulting/AI rivals (Accenture, McKinsey/QuantumBlack, IBM Consulting). Focus on material AI developments: new AI products or platforms, major partnerships, AI assurance/governance or regulatory offerings, significant acquisitions or hires, and firm responses to AI policy and export-control developments. Only include items that are significant in terms of AI developments; skip routine marketing, minor blog posts, and generic thought-leadership. Treat an item as official when it is a release published by the firm itself. Rate significance: 'high' for a material AI development that changes a firm's AI capabilities or market position, 'medium' for notable news, 'low' for routine."
     }
   ]
