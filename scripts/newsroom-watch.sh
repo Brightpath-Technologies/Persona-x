@@ -8,7 +8,8 @@
 # parallel, each as its own headless Claude Code process (a separate sub-agent
 # context). A pure-jq "wire editor" collates every filing: it dedupes against
 # local state, drops anything below a (per-beat) significance floor, enforces a
-# (per-beat) recency window, and orders official releases and higher-significance
+# (per-beat) recency window, optionally keeps only official releases (a per-beat
+# official-source filter), and orders official releases and higher-significance
 # items first.
 #
 # Each run:
@@ -84,6 +85,7 @@ DESK_MAX_ITEMS="${DESK_MAX_ITEMS:-6}"
 MAX_ITEMS="${MAX_ITEMS:-12}"                          # cap after collation
 SIGNIFICANCE_FLOOR="${SIGNIFICANCE_FLOOR:-medium}"    # global fallback: low|medium|high
 MAX_AGE_DAYS="${MAX_AGE_DAYS:-3}"                     # global fallback recency window (suits a 3-edition day)
+OFFICIAL_ONLY="${OFFICIAL_ONLY:-false}"              # global fallback: when true, keep only official releases; per-beat override via beats.json "official_only"
 
 # Publish an edition even on a quiet news cycle (true), or stay silent (false).
 PUBLISH_EMPTY="${PUBLISH_EMPTY:-true}"
@@ -332,13 +334,14 @@ if [ "${NUM_BEATS}" -eq 0 ]; then
   exit 1
 fi
 
-BEAT_IDS=(); BEAT_NAMES=(); BEAT_AGES=(); BEAT_FLOORS=(); DESK_FILES=()
+BEAT_IDS=(); BEAT_NAMES=(); BEAT_AGES=(); BEAT_FLOORS=(); BEAT_OFFICIALS=(); DESK_FILES=()
 i=0
 while [ "${i}" -lt "${NUM_BEATS}" ]; do
   BEAT_IDS+=("$(jq -r ".beats[${i}].id" "${BEATS_FILE}")")
   BEAT_NAMES+=("$(jq -r ".beats[${i}].name" "${BEATS_FILE}")")
   BEAT_AGES+=("$(jq -r ".beats[${i}].max_age_days // ${MAX_AGE_DAYS}" "${BEATS_FILE}")")
   BEAT_FLOORS+=("$(jq -r ".beats[${i}].significance_floor // \"${SIGNIFICANCE_FLOOR}\"" "${BEATS_FILE}")")
+  BEAT_OFFICIALS+=("$(jq -r ".beats[${i}].official_only // ${OFFICIAL_ONLY}" "${BEATS_FILE}")")
   i=$((i+1))
 done
 
@@ -349,10 +352,10 @@ done
 BEAT_META="{}"                       # { "<beat name>": {cutoff, floor}, … }
 i=0
 while [ "${i}" -lt "${NUM_BEATS}" ]; do
-  bid="${BEAT_IDS[$i]}"; bname="${BEAT_NAMES[$i]}"; bage="${BEAT_AGES[$i]}"; bfloor="${BEAT_FLOORS[$i]}"
+  bid="${BEAT_IDS[$i]}"; bname="${BEAT_NAMES[$i]}"; bage="${BEAT_AGES[$i]}"; bfloor="${BEAT_FLOORS[$i]}"; bofficial="${BEAT_OFFICIALS[$i]}"
   bcutoff="$(cutoff_for "${bage}")"
-  BEAT_META="$(jq -c --arg n "${bname}" --arg c "${bcutoff}" --arg f "${bfloor}" \
-    '. + {($n): {cutoff:$c, floor:$f}}' <<<"${BEAT_META}")"
+  BEAT_META="$(jq -c --arg n "${bname}" --arg c "${bcutoff}" --arg f "${bfloor}" --argjson o "${bofficial}" \
+    '. + {($n): {cutoff:$c, floor:$f, official_only:$o}}' <<<"${BEAT_META}")"
 
   out="${STATE_DIR}/desk-${bid}.json"
   echo "[]" > "${out}"
@@ -360,7 +363,7 @@ while [ "${i}" -lt "${NUM_BEATS}" ]; do
 
   bprompt="$(jq -r ".beats[${i}].prompt" "${BEATS_FILE}")"
   full_prompt="${bprompt} $(build_contract "${bage}")"
-  log "desk '${bname}': window ${bage}d (cutoff ${bcutoff}), floor ${bfloor}"
+  log "desk '${bname}': window ${bage}d (cutoff ${bcutoff}), floor ${bfloor}, official_only=${bofficial}"
   run_desk "${bname}" "${full_prompt}" "${out}" &
   i=$((i+1))
 done
@@ -382,16 +385,18 @@ NEW_ITEMS="$(jq -n \
   --argjson meta "${BEAT_META}" \
   --arg gfloor "${SIGNIFICANCE_FLOOR}" \
   --arg gcutoff "${GLOBAL_CUTOFF}" \
+  --argjson gofficial "${OFFICIAL_ONLY}" \
   --arg max "${MAX_ITEMS}" '
   def rank(s): {"low":1,"medium":2,"high":3}[s] // 2;
   def isodate: if (type=="string" and test("[0-9]{4}-[0-9]{2}-[0-9]{2}"))
                then (capture("(?<d>[0-9]{4}-[0-9]{2}-[0-9]{2})").d) else null end;
   (($seen[0]) // []) as $seenurls
   | [ $all[]
-      | ($meta[.beat] // {cutoff:$gcutoff, floor:$gfloor}) as $m
+      | ($meta[.beat] // {cutoff:$gcutoff, floor:$gfloor, official_only:$gofficial}) as $m
       | .url as $u
       | select(($seenurls | index($u)) | not)
       | select(rank(.significance) >= rank($m.floor))
+      | select(($m.official_only != true) or (.official == true))
       | (.published | isodate) as $d
       | select($d == null or $d >= $m.cutoff)
       | .published = $d ]                                  # undated → null, dated → ISO
