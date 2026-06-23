@@ -1,5 +1,4 @@
-import type Anthropic from "@anthropic-ai/sdk";
-import type { LLMMessage } from "./client.js";
+import type { LLMClient, LLMMessage } from "./client.js";
 import { sendMessage, sendMessageForJSON } from "./client.js";
 import type {
   DiscoveryQuestion,
@@ -12,7 +11,7 @@ import { PRIORITY_SIGNALS } from "../engine/discovery/discovery.js";
 /**
  * LLM-Powered Discovery
  *
- * Uses the Anthropic SDK to drive the discovery phase:
+ * Uses the configured LLM provider to drive the discovery phase:
  * - Presents questions to the user via the LLM
  * - Extracts structured signals from user responses
  * - Determines when signal sufficiency is reached
@@ -47,9 +46,9 @@ Respond ONLY with the JSON array, no other text.`;
  * Extract signals from a user's response to a discovery question.
  */
 export async function extractSignals(
-  client: Anthropic,
+  client: LLMClient,
   question: DiscoveryQuestion,
-  userResponse: string
+  userResponse: string,
 ): Promise<ExtractedSignal[]> {
   const prompt = `Discovery question asked:
 "${question.text}"
@@ -77,7 +76,7 @@ Extract all priority signals from this response. The question targeted these sig
         confidence: validateConfidence(String(item.confidence)),
         source_question_id: question.id,
       }));
-    }
+    },
   );
 
   return signals;
@@ -88,17 +87,18 @@ Extract all priority signals from this response. The question targeted these sig
  * that feels conversational rather than formulaic.
  */
 export async function generateConversationalQuestion(
-  client: Anthropic,
+  client: LLMClient,
   question: DiscoveryQuestion,
-  state: DiscoveryState
+  state: DiscoveryState,
 ): Promise<string> {
   const context = state.persona_purpose
     ? `The persona's purpose has been established as: "${state.persona_purpose}"`
     : "We are still establishing the persona's core purpose.";
 
-  const previousSignals = state.signals.length > 0
-    ? `Signals gathered so far: ${state.signals.map((s) => `${s.signal}: ${s.value}`).join("; ")}`
-    : "No signals gathered yet.";
+  const previousSignals =
+    state.signals.length > 0
+      ? `Signals gathered so far: ${state.signals.map((s) => `${s.signal}: ${s.value}`).join("; ")}`
+      : "No signals gathered yet.";
 
   const messages: LLMMessage[] = [
     {
@@ -138,10 +138,13 @@ Respond with ONLY the question text. No preamble.`,
  * Extract purpose from user's initial description.
  */
 export async function extractPurpose(
-  client: Anthropic,
-  userDescription: string
+  client: LLMClient,
+  userDescription: string,
 ): Promise<{ purpose: string; context: string | null }> {
-  const result = await sendMessageForJSON<{ purpose: string; context: string | null }>(
+  const result = await sendMessageForJSON<{
+    purpose: string;
+    context: string | null;
+  }>(
     client,
     {
       system: `You are the Persona-x purpose extraction engine. Given a user's description of the persona they want to create, extract:
@@ -161,7 +164,7 @@ Respond with a JSON object: { "purpose": "...", "context": "..." }`,
         purpose: String(obj.purpose ?? ""),
         context: obj.context ? String(obj.context) : null,
       };
-    }
+    },
   );
 
   return result;
@@ -176,7 +179,11 @@ function validateSignalName(name: string): PrioritySignal {
 }
 
 function validateConfidence(confidence: string): "high" | "medium" | "low" {
-  if (confidence === "high" || confidence === "medium" || confidence === "low") {
+  if (
+    confidence === "high" ||
+    confidence === "medium" ||
+    confidence === "low"
+  ) {
     return confidence;
   }
   return "medium";

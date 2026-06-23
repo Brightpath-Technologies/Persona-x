@@ -12,7 +12,7 @@ import {
 } from "../../src/decision-engine/schema.js";
 
 function makeEvalScores(
-  overrides: Partial<Record<EvaluationDimension, number>> = {}
+  overrides: Partial<Record<EvaluationDimension, number>> = {},
 ): Record<EvaluationDimension, EvaluationScore> {
   const defaults: Record<EvaluationDimension, number> = {
     problem_severity: 8,
@@ -122,7 +122,9 @@ describe("checkStage1Gate", () => {
 
     const result = checkStage1Gate(brief);
     expect(result.passed).toBe(false);
-    expect(result.failures.some((f) => f.includes("Composite score"))).toBe(true);
+    expect(result.failures.some((f) => f.includes("Composite score"))).toBe(
+      true,
+    );
   });
 
   it("fails when societal_benefit < 5", () => {
@@ -142,7 +144,9 @@ describe("checkStage1Gate", () => {
 
     const result = checkStage1Gate(brief);
     expect(result.passed).toBe(false);
-    expect(result.failures.some((f) => f.includes("Societal benefit"))).toBe(true);
+    expect(result.failures.some((f) => f.includes("Societal benefit"))).toBe(
+      true,
+    );
   });
 
   it("fails when persona_x_fit < 6", () => {
@@ -188,7 +192,7 @@ describe("checkStage1Gate", () => {
 
 describe("checkStage2Gate", () => {
   function makeChallengeReport(
-    overrides: Partial<ChallengeReport> = {}
+    overrides: Partial<ChallengeReport> = {},
   ): ChallengeReport {
     return {
       opportunity_ref: "test-001",

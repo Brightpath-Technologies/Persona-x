@@ -23,7 +23,7 @@ export interface LoadResult {
  * Load a persona file from a YAML path.
  */
 export async function loadPersonaFromFile(
-  filePath: string
+  filePath: string,
 ): Promise<LoadResult> {
   const warnings: string[] = [];
 
@@ -53,7 +53,8 @@ export async function loadPersonaFromFile(
   const validation = validatePersonaFile(parsed);
   if (!validation.success || !validation.data) {
     const schemaErrors = validation.errors?.issues.map(
-      (issue: { path: (string | number)[]; message: string }) => `${issue.path.join(".")}: ${issue.message}`
+      (issue: { path: (string | number)[]; message: string }) =>
+        `${issue.path.join(".")}: ${issue.message}`,
     ) ?? ["Unknown validation error"];
     return { success: false, errors: schemaErrors };
   }
@@ -84,9 +85,7 @@ export async function loadPersonaFromFile(
 /**
  * Load multiple persona files for a panel session.
  */
-export async function loadPersonasForPanel(
-  filePaths: string[]
-): Promise<{
+export async function loadPersonasForPanel(filePaths: string[]): Promise<{
   personas: LoadedPersona[];
   errors: Record<string, string[]>;
   warnings: Record<string, string[]>;

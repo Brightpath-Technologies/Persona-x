@@ -1,17 +1,22 @@
 import type {
   LoadedPersona,
   PanelConfig,
+  PanelMessage,
   PanelRound,
 } from "./interface.js";
 import { generatePersonaSystemPrompt } from "./interface.js";
+import type { LLMClient } from "../llm/client.js";
+import {
+  generatePersonaResponse,
+  generateRoundSummary,
+} from "../llm/panel-llm.js";
 
 /**
  * Panel Simulator
  *
- * A lightweight panel runtime that demonstrates how persona files
- * drive multi-agent discussions. In production, this would integrate
- * with the Anthropic SDK to generate actual LLM responses shaped
- * by each persona's rubric and behaviour profile.
+ * A lightweight panel runtime that drives persona files through
+ * a multi-agent discussion. Responses are produced by the configured
+ * LLM provider; round and session orchestration lives here.
  *
  * For the prototype, this provides:
  * - Persona selection based on topic
@@ -51,7 +56,7 @@ export function createPanelSession(config: PanelConfig): PanelSession {
  * This reflects the rubric's intervention_frequency dimension.
  */
 export function determineSpeakingOrder(
-  personas: LoadedPersona[]
+  personas: LoadedPersona[],
 ): LoadedPersona[] {
   return [...personas].sort((a, b) => {
     const aFreq = a.file.rubric.intervention_frequency.score;
@@ -70,7 +75,7 @@ export function determineSpeakingOrder(
 export function shouldPersonaContribute(
   persona: LoadedPersona,
   roundNumber: number,
-  _totalRounds: number
+  _totalRounds: number,
 ): boolean {
   const freq = persona.file.rubric.intervention_frequency.score;
 
@@ -89,9 +94,73 @@ export function shouldPersonaContribute(
  */
 export function getPersonaPrompt(
   session: PanelSession,
-  personaId: string
+  personaId: string,
 ): string | undefined {
   return session.system_prompts.get(personaId);
+}
+
+/**
+ * Execute one round of the panel discussion.
+ *
+ * Iterates personas in speaking order, calls the LLM for each persona that
+ * should contribute this round, then generates a synthesising round summary.
+ * Mutates the session in place and returns the completed round.
+ */
+export async function runPanelRound(
+  client: LLMClient,
+  session: PanelSession,
+  roundNumber: number,
+): Promise<PanelRound> {
+  const order = determineSpeakingOrder(session.config.personas);
+  const messages: PanelMessage[] = [];
+
+  for (const persona of order) {
+    if (!persona.active) continue;
+    if (
+      !shouldPersonaContribute(persona, roundNumber, session.config.max_rounds)
+    ) {
+      continue;
+    }
+
+    const message = await generatePersonaResponse(
+      client,
+      session,
+      persona,
+      roundNumber,
+      messages,
+    );
+    messages.push(message);
+  }
+
+  const summary =
+    messages.length > 0
+      ? await generateRoundSummary(client, session.config.topic, messages)
+      : "No contributions this round.";
+
+  const round: PanelRound = {
+    round_number: roundNumber,
+    messages,
+    summary,
+  };
+
+  session.rounds.push(round);
+  session.current_round = roundNumber;
+  return round;
+}
+
+/**
+ * Run the full panel until max_rounds is reached or every persona has
+ * gone silent for a round. Returns the completed session.
+ */
+export async function runPanel(
+  client: LLMClient,
+  session: PanelSession,
+): Promise<PanelSession> {
+  for (let round = 1; round <= session.config.max_rounds; round++) {
+    const result = await runPanelRound(client, session, round);
+    if (result.messages.length === 0) break;
+  }
+  return session;
 }
 
 /**
@@ -104,7 +173,7 @@ export function formatPanelDiscussion(session: PanelSession): string {
   lines.push("");
   lines.push(`Context: ${session.config.context}`);
   lines.push(
-    `Personas: ${session.config.personas.map((p) => p.file.metadata.name).join(", ")}`
+    `Personas: ${session.config.personas.map((p) => p.file.metadata.name).join(", ")}`,
   );
   lines.push("");
 

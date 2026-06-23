@@ -21,13 +21,13 @@ import type { DiscoveryState } from "../discovery/discovery.js";
  * Later sections must not contradict earlier ones without explicit confirmation.
  */
 export const POPULATION_ORDER = [
-  "purpose",       // Persona Purpose & Panel Use
-  "panel_role",    // Panel Role & Functional Contribution
-  "rubric",        // Judgement & Reasoning Profile
-  "reasoning",     // Reasoning & Decision Tendencies
-  "interaction",   // Interaction & Challenge Style
-  "boundaries",    // Boundaries, Constraints & Refusals
-  "optional",      // Communication, Knowledge Base, Provenance (optional sections)
+  "purpose", // Persona Purpose & Panel Use
+  "panel_role", // Panel Role & Functional Contribution
+  "rubric", // Judgement & Reasoning Profile
+  "reasoning", // Reasoning & Decision Tendencies
+  "interaction", // Interaction & Challenge Style
+  "boundaries", // Boundaries, Constraints & Refusals
+  "optional", // Communication, Knowledge Base, Provenance (optional sections)
 ] as const;
 
 export type PopulationSection = (typeof POPULATION_ORDER)[number];
@@ -47,6 +47,12 @@ export interface PopulationRecord {
   source_signals: string[]; // Which discovery signals informed this section
   inferred: boolean;
   inference_justification?: string;
+  /** Provider that produced this section (or "human" for direct input). */
+  provider?: string;
+  /** Model identifier used to generate this section. */
+  model?: string;
+  /** ISO 8601 timestamp when the section was captured. */
+  timestamp?: string;
 }
 
 /** Current state of the pipeline */
@@ -61,9 +67,7 @@ export interface PipelineState {
 /**
  * Create an initial pipeline state from completed discovery.
  */
-export function createPipelineState(
-  discovery: DiscoveryState
-): PipelineState {
+export function createPipelineState(discovery: DiscoveryState): PipelineState {
   return {
     current_section_index: 0,
     completed_sections: [],
@@ -77,7 +81,7 @@ export function createPipelineState(
  * Get the current section that needs to be populated.
  */
 export function getCurrentSection(
-  state: PipelineState
+  state: PipelineState,
 ): PopulationSection | null {
   if (state.current_section_index >= POPULATION_ORDER.length) {
     return null;
@@ -111,7 +115,10 @@ export function recordPopulation(
     confidence: "high" | "medium" | "low";
     source_signals: string[];
     inference_justification?: string;
-  }
+    provider?: string;
+    model?: string;
+    timestamp?: string;
+  },
 ): PipelineState {
   const record: PopulationRecord = {
     section,
@@ -120,6 +127,9 @@ export function recordPopulation(
     source_signals: options.source_signals,
     inferred: method === "inference",
     inference_justification: options.inference_justification,
+    provider: options.provider,
+    model: options.model,
+    timestamp: options.timestamp ?? new Date().toISOString(),
   };
 
   const updatedPartial = { ...state.partial_persona };
@@ -162,7 +172,7 @@ export function recordPopulation(
  */
 export function shouldAskUser(
   section: PopulationSection,
-  state: PipelineState
+  state: PipelineState,
 ): boolean {
   // Always ask for boundaries — ask when "a boundary, refusal, or escalation posture is unclear"
   if (section === "boundaries") return true;
@@ -173,7 +183,7 @@ export function shouldAskUser(
   // For rubric, check if we have sufficient scenario/signal data
   if (section === "rubric") {
     const signalCount = state.discovery.signals.filter(
-      (s) => s.confidence === "high" || s.confidence === "medium"
+      (s) => s.confidence === "high" || s.confidence === "medium",
     ).length;
     // Need at least 4 strong signals to infer rubric scores
     return signalCount < 4;
@@ -181,7 +191,7 @@ export function shouldAskUser(
 
   // For other sections, infer if we have high-confidence signals
   const relevantSignals = state.discovery.signals.filter(
-    (s) => s.confidence === "high"
+    (s) => s.confidence === "high",
   );
   return relevantSignals.length < 2;
 }
@@ -200,8 +210,36 @@ export function isPipelineComplete(state: PipelineState): boolean {
   ];
 
   return required.every((section) =>
-    state.completed_sections.includes(section)
+    state.completed_sections.includes(section),
   );
+}
+
+/**
+ * Convert pipeline records into the SectionGenerationRecord[] shape
+ * expected by the persona file's provenance.section_generation field.
+ * Records missing provider/model (e.g. direct input before an LLM runs)
+ * are emitted with provider="human" and model="n/a" so the audit trail
+ * is still complete.
+ */
+export function buildSectionGenerationProvenance(state: PipelineState): Array<{
+  section: string;
+  provider: string;
+  model: string;
+  timestamp: string;
+  method: PopulationMethod;
+  confidence: "high" | "medium" | "low";
+}> {
+  return state.records.map((record) => ({
+    section: record.section,
+    provider:
+      record.provider ??
+      (record.method === "direct_input" ? "human" : "unknown"),
+    model:
+      record.model ?? (record.method === "direct_input" ? "n/a" : "unknown"),
+    timestamp: record.timestamp ?? new Date().toISOString(),
+    method: record.method,
+    confidence: record.confidence,
+  }));
 }
 
 /**
@@ -223,7 +261,9 @@ export function generateBuildTrace(state: PipelineState): string {
     if (record.inferred && record.inference_justification) {
       lines.push(`- Inference: ${record.inference_justification}`);
     }
-    lines.push(`- Source signals: ${record.source_signals.join(", ") || "none"}`);
+    lines.push(
+      `- Source signals: ${record.source_signals.join(", ") || "none"}`,
+    );
     lines.push("");
   }
 

@@ -38,7 +38,12 @@ export interface EngineState {
 }
 
 export interface EngineAction {
-  type: "ask_user" | "present_choice" | "infer_and_confirm" | "generate_section" | "present_file";
+  type:
+    | "ask_user"
+    | "present_choice"
+    | "infer_and_confirm"
+    | "generate_section"
+    | "present_file";
   payload: unknown;
 }
 
@@ -77,7 +82,7 @@ export function getNextAction(state: EngineState): EngineAction {
       // Find missing signals and select the next question
       const missing = getMissingSignals(state.discovery);
       const nextQuestion = QUESTION_BANK.find((q) =>
-        q.targets.some((t) => missing.includes(t))
+        q.targets.some((t) => missing.includes(t)),
       );
 
       if (nextQuestion) {
@@ -111,7 +116,9 @@ export function getNextAction(state: EngineState): EngineAction {
       if (!currentSection) {
         return {
           type: "present_file",
-          payload: { message: "All sections populated. Generating final persona file." },
+          payload: {
+            message: "All sections populated. Generating final persona file.",
+          },
         };
       }
 
@@ -186,6 +193,7 @@ export function transitionToReview(state: EngineState): EngineState {
 export function getRubricSummary(state: EngineState): string | null {
   if (!state.pipeline?.partial_persona.rubric) return null;
   return formatRubricProfile(
-    state.pipeline.partial_persona.rubric as import("../schema/rubric.js").RubricProfile
+    state.pipeline.partial_persona
+      .rubric as import("../schema/rubric.js").RubricProfile,
   );
 }

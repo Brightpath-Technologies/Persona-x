@@ -45,7 +45,7 @@ const REFINABLE_SECTIONS = Object.keys(SECTION_LABELS);
 
 export async function refineCommand(
   filePath: string,
-  options: RefineOptions
+  options: RefineOptions,
 ): Promise<void> {
   console.log("Persona-x — REFINE mode active");
   console.log(`Loading persona file: ${filePath}\n`);
@@ -62,7 +62,9 @@ export async function refineCommand(
   }
 
   const persona = result.data;
-  console.log(`Loaded: ${persona.metadata.name} (v${persona.metadata.version})`);
+  console.log(
+    `Loaded: ${persona.metadata.name} (v${persona.metadata.version})`,
+  );
 
   // Show current rubric for context
   console.log("\nCurrent rubric profile:");
@@ -74,7 +76,9 @@ export async function refineCommand(
     for (const [key, label] of Object.entries(SECTION_LABELS)) {
       console.log(`  ${key.padEnd(16)} ${label}`);
     }
-    console.log("\nUse --section <key> to target a specific section for refinement.");
+    console.log(
+      "\nUse --section <key> to target a specific section for refinement.",
+    );
     return;
   }
 
@@ -95,7 +99,9 @@ export async function refineCommand(
   try {
     client = createClient();
   } catch {
-    console.log("No API key available. Showing current section for manual editing.\n");
+    console.log(
+      "No API key available. Showing current section for manual editing.\n",
+    );
     showSectionContent(persona, targetSection);
     return;
   }
@@ -106,7 +112,9 @@ export async function refineCommand(
   showSectionContent(persona, targetSection);
 
   // Get refinement instructions from user
-  const instruction = await rl.question("\nDescribe what you want to change in this section:\n> ");
+  const instruction = await rl.question(
+    "\nDescribe what you want to change in this section:\n> ",
+  );
   if (!instruction.trim()) {
     console.log("No refinement instructions provided. Exiting.");
     rl.close();
@@ -116,7 +124,11 @@ export async function refineCommand(
   console.log(`\nRefining ${targetSection}...`);
 
   try {
-    const currentContent = JSON.stringify(getSection(persona, targetSection), null, 2);
+    const currentContent = JSON.stringify(
+      getSection(persona, targetSection),
+      null,
+      2,
+    );
 
     const refined = await sendMessageForJSON(
       client,
@@ -149,7 +161,7 @@ Return the complete refined section as a JSON object.`,
         maxTokens: 2048,
         temperature: 0.5,
       },
-      (data) => validateSection(targetSection, data)
+      (data) => validateSection(targetSection, data),
     );
 
     // Apply the refinement
@@ -179,7 +191,9 @@ Return the complete refined section as a JSON object.`,
     const outputPath = options.output ?? filePath;
     await writePersonaFile(outputPath, persona);
     console.log(`\nSection "${targetSection}" refined successfully.`);
-    console.log(`Version bumped: ${result.data.metadata.version} → ${newVersion}`);
+    console.log(
+      `Version bumped: ${result.data.metadata.version} → ${newVersion}`,
+    );
     console.log(`Written to: ${outputPath}`);
 
     // Show updated rubric if that's what changed
@@ -221,44 +235,86 @@ function showSectionContent(persona: PersonaFile, section: string): void {
 
 function getSection(persona: PersonaFile, section: string): unknown {
   switch (section) {
-    case "purpose": return persona.purpose;
-    case "bio": return persona.bio;
-    case "panel_role": return persona.panel_role;
-    case "rubric": return persona.rubric;
-    case "reasoning": return persona.reasoning;
-    case "interaction": return persona.interaction;
-    case "communication": return persona.communication;
-    case "boundaries": return persona.boundaries;
-    case "invocation": return persona.invocation;
-    default: return null;
+    case "purpose":
+      return persona.purpose;
+    case "bio":
+      return persona.bio;
+    case "panel_role":
+      return persona.panel_role;
+    case "rubric":
+      return persona.rubric;
+    case "reasoning":
+      return persona.reasoning;
+    case "interaction":
+      return persona.interaction;
+    case "communication":
+      return persona.communication;
+    case "boundaries":
+      return persona.boundaries;
+    case "invocation":
+      return persona.invocation;
+    default:
+      return null;
   }
 }
 
-function setSection(persona: PersonaFile, section: string, data: unknown): void {
+function setSection(
+  persona: PersonaFile,
+  section: string,
+  data: unknown,
+): void {
   switch (section) {
-    case "purpose": persona.purpose = data as PersonaFile["purpose"]; break;
-    case "bio": persona.bio = data as PersonaFile["bio"]; break;
-    case "panel_role": persona.panel_role = data as PersonaFile["panel_role"]; break;
-    case "rubric": persona.rubric = data as PersonaFile["rubric"]; break;
-    case "reasoning": persona.reasoning = data as PersonaFile["reasoning"]; break;
-    case "interaction": persona.interaction = data as PersonaFile["interaction"]; break;
-    case "communication": persona.communication = data as PersonaFile["communication"]; break;
-    case "boundaries": persona.boundaries = data as PersonaFile["boundaries"]; break;
-    case "invocation": persona.invocation = data as PersonaFile["invocation"]; break;
+    case "purpose":
+      persona.purpose = data as PersonaFile["purpose"];
+      break;
+    case "bio":
+      persona.bio = data as PersonaFile["bio"];
+      break;
+    case "panel_role":
+      persona.panel_role = data as PersonaFile["panel_role"];
+      break;
+    case "rubric":
+      persona.rubric = data as PersonaFile["rubric"];
+      break;
+    case "reasoning":
+      persona.reasoning = data as PersonaFile["reasoning"];
+      break;
+    case "interaction":
+      persona.interaction = data as PersonaFile["interaction"];
+      break;
+    case "communication":
+      persona.communication = data as PersonaFile["communication"];
+      break;
+    case "boundaries":
+      persona.boundaries = data as PersonaFile["boundaries"];
+      break;
+    case "invocation":
+      persona.invocation = data as PersonaFile["invocation"];
+      break;
   }
 }
 
 function validateSection(section: string, data: unknown): unknown {
   switch (section) {
-    case "purpose": return PersonaPurposeSchema.parse(data);
-    case "bio": return PersonaBioSchema.parse(data);
-    case "panel_role": return PanelRoleSchema.parse(data);
-    case "rubric": return RubricProfileSchema.parse(data);
-    case "reasoning": return ReasoningTendenciesSchema.parse(data);
-    case "interaction": return InteractionStyleSchema.parse(data);
-    case "communication": return CommunicationStyleSchema.parse(data);
-    case "boundaries": return BoundariesSchema.parse(data);
-    case "invocation": return InvocationCuesSchema.parse(data);
-    default: throw new Error(`Unknown section: ${section}`);
+    case "purpose":
+      return PersonaPurposeSchema.parse(data);
+    case "bio":
+      return PersonaBioSchema.parse(data);
+    case "panel_role":
+      return PanelRoleSchema.parse(data);
+    case "rubric":
+      return RubricProfileSchema.parse(data);
+    case "reasoning":
+      return ReasoningTendenciesSchema.parse(data);
+    case "interaction":
+      return InteractionStyleSchema.parse(data);
+    case "communication":
+      return CommunicationStyleSchema.parse(data);
+    case "boundaries":
+      return BoundariesSchema.parse(data);
+    case "invocation":
+      return InvocationCuesSchema.parse(data);
+    default:
+      throw new Error(`Unknown section: ${section}`);
   }
 }

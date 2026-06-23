@@ -5,6 +5,16 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./graph": {
+      "types": "./dist/graph/index.d.ts",
+      "import": "./dist/graph/index.js"
+    }
+  },
   "bin": {
     "persona-x": "dist/cli/index.js"
   },
@@ -14,6 +24,7 @@
     "create": "tsx src/cli/index.ts create",
     "refine": "tsx src/cli/index.ts refine",
     "validate": "tsx src/cli/index.ts validate",
+    "panel": "tsx src/cli/index.ts panel",
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "eslint src/ tests/",

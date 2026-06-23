@@ -1,5 +1,8 @@
 import type { ExtractedSignal } from "../discovery/discovery.js";
-import type { PipelineState, PopulationSection } from "../population/pipeline.js";
+import type {
+  PipelineState,
+  PopulationSection,
+} from "../population/pipeline.js";
 
 /**
  * Inference Engine
@@ -32,7 +35,7 @@ export interface InferenceDecision {
  */
 export function evaluateInference(
   section: PopulationSection,
-  state: PipelineState
+  state: PipelineState,
 ): InferenceDecision {
   const signals = state.discovery.signals;
 
@@ -78,10 +81,10 @@ export function evaluateInference(
   }
 
   const highConfidenceCount = relevantSignals.filter(
-    (s) => s.confidence === "high"
+    (s) => s.confidence === "high",
   ).length;
   const mediumConfidenceCount = relevantSignals.filter(
-    (s) => s.confidence === "medium"
+    (s) => s.confidence === "medium",
   ).length;
 
   // Need at least 2 signals pointing the same direction to infer
@@ -123,7 +126,7 @@ export function evaluateInference(
  */
 function getRelevantSignals(
   section: PopulationSection,
-  signals: ExtractedSignal[]
+  signals: ExtractedSignal[],
 ): ExtractedSignal[] {
   const sectionSignalMap: Record<PopulationSection, string[]> = {
     purpose: [],
@@ -172,7 +175,7 @@ function detectConflicts(signals: ExtractedSignal[]): string[] {
     const uniqueValues = new Set(values);
     if (uniqueValues.size > 1) {
       conflicts.push(
-        `Signal '${signalName}' has conflicting values: ${[...uniqueValues].join(" vs ")}`
+        `Signal '${signalName}' has conflicting values: ${[...uniqueValues].join(" vs ")}`,
       );
     }
   }
@@ -187,36 +190,27 @@ function detectConflicts(signals: ExtractedSignal[]): string[] {
  */
 export function checkCrossSectionConsistency(
   section: PopulationSection,
-  state: PipelineState
+  state: PipelineState,
 ): string[] {
   const warnings: string[] = [];
 
   // If we have rubric and reasoning, check alignment
-  if (
-    section === "reasoning" &&
-    state.partial_persona.rubric
-  ) {
+  if (section === "reasoning" && state.partial_persona.rubric) {
     const rubric = state.partial_persona.rubric;
 
     // High evidence threshold should align with reasoning that questions claims
     if (rubric.evidence_threshold.score >= 7) {
       const reasoning = state.partial_persona.reasoning;
-      if (
-        reasoning &&
-        reasoning.systematically_questions.length === 0
-      ) {
+      if (reasoning && reasoning.systematically_questions.length === 0) {
         warnings.push(
-          "Reasoning has no systematically questioned items, but the rubric shows high evidence threshold. These should align."
+          "Reasoning has no systematically questioned items, but the rubric shows high evidence threshold. These should align.",
         );
       }
     }
   }
 
   // If we have rubric and interaction, check alignment
-  if (
-    section === "interaction" &&
-    state.partial_persona.rubric
-  ) {
+  if (section === "interaction" && state.partial_persona.rubric) {
     const rubric = state.partial_persona.rubric;
     const interaction = state.partial_persona.interaction;
 
@@ -227,7 +221,7 @@ export function checkCrossSectionConsistency(
       interaction?.challenge_strength === "gentle"
     ) {
       warnings.push(
-        "Interaction style shows gentle questioning, but the rubric indicates high intervention frequency. Consider whether the persona actively intervenes with questions or remains more passive."
+        "Interaction style shows gentle questioning, but the rubric indicates high intervention frequency. Consider whether the persona actively intervenes with questions or remains more passive.",
       );
     }
   }

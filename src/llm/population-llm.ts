@@ -1,6 +1,9 @@
-import type Anthropic from "@anthropic-ai/sdk";
+import type { LLMClient } from "./client.js";
 import { sendMessageForJSON } from "./client.js";
-import type { PipelineState, PopulationSection } from "../engine/population/pipeline.js";
+import type {
+  PipelineState,
+  PopulationSection,
+} from "../engine/population/pipeline.js";
 import type {
   PersonaPurpose,
   PersonaBio,
@@ -22,12 +25,15 @@ import {
   CommunicationStyleSchema,
 } from "../schema/persona.js";
 import type { RubricProfile } from "../schema/rubric.js";
-import { RubricProfileSchema, RUBRIC_DIMENSION_LABELS } from "../schema/rubric.js";
+import {
+  RubricProfileSchema,
+  RUBRIC_DIMENSION_LABELS,
+} from "../schema/rubric.js";
 
 /**
  * LLM-Powered Population
  *
- * Uses the Anthropic SDK to generate persona file sections
+ * Uses the configured LLM provider to generate persona file sections
  * from discovery signals. Each section is validated against
  * its Zod schema before being accepted.
  */
@@ -48,10 +54,10 @@ Do not include any text outside the JSON object.`;
  * Generate a persona section using LLM, validated against the appropriate schema.
  */
 export async function generateSection(
-  client: Anthropic,
+  client: LLMClient,
   section: PopulationSection,
   state: PipelineState,
-  userInput?: string
+  userInput?: string,
 ): Promise<unknown> {
   switch (section) {
     case "purpose":
@@ -74,9 +80,9 @@ export async function generateSection(
 }
 
 async function generatePurpose(
-  client: Anthropic,
+  client: LLMClient,
   state: PipelineState,
-  userInput?: string
+  userInput?: string,
 ): Promise<PersonaPurpose> {
   const signalSummary = formatSignalSummary(state);
 
@@ -104,14 +110,14 @@ Respond with a JSON object matching this structure.`,
       maxTokens: 1024,
       temperature: 0.5,
     },
-    (data) => PersonaPurposeSchema.parse(data)
+    (data) => PersonaPurposeSchema.parse(data),
   );
 }
 
 async function generatePanelRole(
-  client: Anthropic,
+  client: LLMClient,
   state: PipelineState,
-  userInput?: string
+  userInput?: string,
 ): Promise<PanelRole> {
   const signalSummary = formatSignalSummary(state);
   const purposeContext = state.partial_persona.purpose
@@ -142,14 +148,14 @@ Respond with a JSON object matching this structure.`,
       maxTokens: 1024,
       temperature: 0.5,
     },
-    (data) => PanelRoleSchema.parse(data)
+    (data) => PanelRoleSchema.parse(data),
   );
 }
 
 async function generateRubric(
-  client: Anthropic,
+  client: LLMClient,
   state: PipelineState,
-  userInput?: string
+  userInput?: string,
 ): Promise<RubricProfile> {
   const signalSummary = formatSignalSummary(state);
   const purposeContext = state.partial_persona.purpose
@@ -197,13 +203,13 @@ Respond with a JSON object with all six dimensions.`,
       maxTokens: 2048,
       temperature: 0.5,
     },
-    (data) => RubricProfileSchema.parse(data)
+    (data) => RubricProfileSchema.parse(data),
   );
 }
 
 async function generateReasoning(
-  client: Anthropic,
-  state: PipelineState
+  client: LLMClient,
+  state: PipelineState,
 ): Promise<ReasoningTendencies> {
   const signalSummary = formatSignalSummary(state);
   const priorContext = formatPriorSections(state);
@@ -234,13 +240,13 @@ Respond with a JSON object matching this structure.`,
       maxTokens: 1024,
       temperature: 0.5,
     },
-    (data) => ReasoningTendenciesSchema.parse(data)
+    (data) => ReasoningTendenciesSchema.parse(data),
   );
 }
 
 async function generateInteraction(
-  client: Anthropic,
-  state: PipelineState
+  client: LLMClient,
+  state: PipelineState,
 ): Promise<InteractionStyle> {
   const signalSummary = formatSignalSummary(state);
   const priorContext = formatPriorSections(state);
@@ -271,14 +277,14 @@ Respond with a JSON object matching this structure.`,
       maxTokens: 1024,
       temperature: 0.5,
     },
-    (data) => InteractionStyleSchema.parse(data)
+    (data) => InteractionStyleSchema.parse(data),
   );
 }
 
 async function generateBoundaries(
-  client: Anthropic,
+  client: LLMClient,
   state: PipelineState,
-  userInput?: string
+  userInput?: string,
 ): Promise<Boundaries> {
   const signalSummary = formatSignalSummary(state);
   const priorContext = formatPriorSections(state);
@@ -309,13 +315,13 @@ Respond with a JSON object matching this structure.`,
       maxTokens: 1024,
       temperature: 0.5,
     },
-    (data) => BoundariesSchema.parse(data)
+    (data) => BoundariesSchema.parse(data),
   );
 }
 
 async function generateOptionalSections(
-  client: Anthropic,
-  state: PipelineState
+  client: LLMClient,
+  state: PipelineState,
 ): Promise<{
   communication?: CommunicationStyle;
   invocation?: InvocationCues;
@@ -369,7 +375,7 @@ These must be consistent with all prior sections.`,
         invocation: InvocationCuesSchema.parse(obj.invocation),
         bio: PersonaBioSchema.parse(obj.bio),
       };
-    }
+    },
   );
 
   return result;
@@ -395,7 +401,9 @@ function formatPriorSections(state: PipelineState): string {
     lines.push(`Purpose: ${p.purpose.description}`);
   }
   if (p.panel_role) {
-    lines.push(`Panel role: ${p.panel_role.contribution_type} — ${p.panel_role.expected_value}`);
+    lines.push(
+      `Panel role: ${p.panel_role.contribution_type} — ${p.panel_role.expected_value}`,
+    );
   }
   if (p.rubric) {
     lines.push("Rubric scores:");
@@ -408,7 +416,9 @@ function formatPriorSections(state: PipelineState): string {
     lines.push(`Under pressure: ${p.reasoning.under_pressure}`);
   }
   if (p.interaction) {
-    lines.push(`Interaction mode: ${p.interaction.primary_mode}, challenge: ${p.interaction.challenge_strength}`);
+    lines.push(
+      `Interaction mode: ${p.interaction.primary_mode}, challenge: ${p.interaction.challenge_strength}`,
+    );
   }
 
   return lines.length > 0 ? lines.join("\n") : "No prior sections populated.";

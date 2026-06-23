@@ -21,7 +21,7 @@ export type QuestionType =
   | "choice" // Binary or multi-option selection
   | "contrast" // "Closer to X or Y?"
   | "spectrum" // "Where on the scale of X to Y?"
-  | "scenario" // Short situation with implied behaviour
+  | "scenario"; // Short situation with implied behaviour
 
 export interface DiscoveryQuestion {
   id: string;
@@ -60,7 +60,7 @@ export function hasSignalSufficiency(state: DiscoveryState): boolean {
 
   // Need at least 3 of 5 priority signals with medium+ confidence
   const strongSignals = state.signals.filter(
-    (s) => s.confidence === "high" || s.confidence === "medium"
+    (s) => s.confidence === "high" || s.confidence === "medium",
   );
   const strongCoverage = new Set(strongSignals.map((s) => s.signal));
 
@@ -165,7 +165,8 @@ export const QUESTION_BANK: DiscoveryQuestion[] = [
     type: "scenario",
     text: "The discussion is running long, the group is divided, and a decision is needed today. What does this persona do?",
     targets: ["pressure_behaviour", "deferral_preferences"],
-    scenario_context: "Stakes are moderate. Both sides have reasonable arguments.",
+    scenario_context:
+      "Stakes are moderate. Both sides have reasonable arguments.",
   },
 
   // Deferral preferences

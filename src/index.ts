@@ -33,7 +33,10 @@ export type {
   Boundaries,
   InvocationCues,
   Provenance,
+  SectionGenerationRecord,
 } from "./schema/persona.js";
+
+export { SectionGenerationRecordSchema } from "./schema/persona.js";
 
 export {
   RubricProfileSchema,
@@ -71,7 +74,11 @@ export {
   getRubricSummary,
 } from "./engine/engine.js";
 
-export type { EngineState, EnginePhase, EngineAction } from "./engine/engine.js";
+export type {
+  EngineState,
+  EnginePhase,
+  EngineAction,
+} from "./engine/engine.js";
 
 // Discovery exports
 export {
@@ -97,6 +104,9 @@ export {
   advanceSection,
   isPipelineComplete,
   generateBuildTrace,
+  recordPopulation,
+  shouldAskUser,
+  buildSectionGenerationProvenance,
 } from "./engine/population/pipeline.js";
 
 export type {
@@ -132,15 +142,14 @@ export type {
   RubricInfluence,
 } from "./runtime/interface.js";
 
-export {
-  loadPersonaFromFile,
-  loadPersonasForPanel,
-} from "./runtime/loader.js";
+export { loadPersonaFromFile, loadPersonasForPanel } from "./runtime/loader.js";
 
 export {
   createPanelSession,
   determineSpeakingOrder,
   shouldPersonaContribute,
+  runPanelRound,
+  runPanel,
   formatPanelDiscussion,
 } from "./runtime/panel.js";
 
@@ -151,9 +160,19 @@ export {
   createClient,
   sendMessage,
   sendMessageForJSON,
+  OfflineViolationError,
+  ProviderRequestError,
 } from "./llm/client.js";
 
-export type { LLMResponse, LLMMessage, LLMRequestOptions } from "./llm/client.js";
+export type {
+  LLMClient,
+  LLMResponse,
+  LLMMessage,
+  LLMRequestOptions,
+  ProviderName,
+} from "./llm/client.js";
+
+export { isOfflineMode } from "./llm/providers/guard.js";
 
 export {
   extractSignals,

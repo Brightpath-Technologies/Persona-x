@@ -24,12 +24,12 @@ export const EVALUATION_DIMENSIONS = [
 export type EvaluationDimension = (typeof EVALUATION_DIMENSIONS)[number];
 
 export const EVALUATION_WEIGHTS: Record<EvaluationDimension, number> = {
-  problem_severity: 0.20,
-  societal_benefit: 0.20,
-  market_viability: 0.20,
-  persona_x_fit: 0.20,
-  defensibility: 0.10,
-  execution_complexity: 0.10,
+  problem_severity: 0.2,
+  societal_benefit: 0.2,
+  market_viability: 0.2,
+  persona_x_fit: 0.2,
+  defensibility: 0.1,
+  execution_complexity: 0.1,
 };
 
 export const EvaluationScoreSchema = z.object({
@@ -224,7 +224,11 @@ export const OperationalReadinessSchema = z.object({
   automation_plan: z.string(),
 });
 
-export const ReadinessVerdictSchema = z.enum(["ready", "conditional", "not_ready"]);
+export const ReadinessVerdictSchema = z.enum([
+  "ready",
+  "conditional",
+  "not_ready",
+]);
 
 export const GoNoGoSchema = z.object({
   delivery_realist: ReadinessVerdictSchema,
@@ -250,7 +254,7 @@ export type DeliveryPlan = z.infer<typeof DeliveryPlanSchema>;
 // ── Composite Score Calculation ────────────────────────────────────
 
 export function calculateCompositeScore(
-  scores: Record<EvaluationDimension, EvaluationScore>
+  scores: Record<EvaluationDimension, EvaluationScore>,
 ): number {
   let composite = 0;
   for (const dim of EVALUATION_DIMENSIONS) {
@@ -274,15 +278,21 @@ export function checkStage1Gate(brief: OpportunityBrief): GateResult {
     failures.push(`Composite score ${brief.scores.composite} < 7.0 threshold`);
   }
   if (brief.scores.societal_benefit.score < 5) {
-    failures.push(`Societal benefit ${brief.scores.societal_benefit.score}/10 < 5 — extractive solutions are not permitted`);
+    failures.push(
+      `Societal benefit ${brief.scores.societal_benefit.score}/10 < 5 — extractive solutions are not permitted`,
+    );
   }
   if (brief.scores.persona_x_fit.score < 6) {
-    failures.push(`Persona-x fit ${brief.scores.persona_x_fit.score}/10 < 6 — problem does not need multi-perspective challenge`);
+    failures.push(
+      `Persona-x fit ${brief.scores.persona_x_fit.score}/10 < 6 — problem does not need multi-perspective challenge`,
+    );
   }
 
   for (const dim of EVALUATION_DIMENSIONS) {
     if (brief.scores[dim].score <= 2) {
-      failures.push(`${dim} scored ${brief.scores[dim].score}/10 — requires explicit justification`);
+      failures.push(
+        `${dim} scored ${brief.scores[dim].score}/10 — requires explicit justification`,
+      );
     }
   }
 
@@ -297,23 +307,32 @@ export function checkStage2Gate(report: ChallengeReport): GateResult {
   const failures: string[] = [];
 
   const unresolvedCritical = report.risks_identified.filter(
-    (r) => r.severity === "critical" && r.status === "unresolved"
+    (r) => r.severity === "critical" && r.status === "unresolved",
   );
   if (unresolvedCritical.length > 0) {
     failures.push(`${unresolvedCritical.length} unmitigated critical risk(s)`);
   }
 
   if (report.final_positions.ethical_boundary_guardian === "fail") {
-    failures.push("Ethical Boundary Guardian declared fail — non-negotiable kill");
+    failures.push(
+      "Ethical Boundary Guardian declared fail — non-negotiable kill",
+    );
   }
 
   if (report.final_positions.sceptical_investor === "fail") {
-    failures.push("Sceptical Investor declared fail — financial model not viable");
+    failures.push(
+      "Sceptical Investor declared fail — financial model not viable",
+    );
   }
 
   return {
     passed: failures.length === 0,
     failures,
-    decision: failures.length === 0 ? "proceed" : report.final_positions.ethical_boundary_guardian === "fail" ? "kill" : "defer",
+    decision:
+      failures.length === 0
+        ? "proceed"
+        : report.final_positions.ethical_boundary_guardian === "fail"
+          ? "kill"
+          : "defer",
   };
 }

@@ -6,11 +6,7 @@ import type {
   DeliveryPlan,
   GateResult,
 } from "./schema.js";
-import {
-  DECISION_STAGES,
-  checkStage1Gate,
-  checkStage2Gate,
-} from "./schema.js";
+import { DECISION_STAGES, checkStage1Gate, checkStage2Gate } from "./schema.js";
 
 /**
  * Decision Engine Pipeline
@@ -113,7 +109,7 @@ export interface StagePanel {
  * Create a new decision pipeline for evaluating an opportunity.
  */
 export function createDecisionPipeline(
-  opportunityInput: string
+  opportunityInput: string,
 ): DecisionPipelineState {
   return {
     current_stage: "propose",
@@ -139,9 +135,7 @@ export function createDecisionPipeline(
 /**
  * Get the current stage panel configuration.
  */
-export function getCurrentStagePanel(
-  state: DecisionPipelineState
-): StagePanel {
+export function getCurrentStagePanel(state: DecisionPipelineState): StagePanel {
   return STAGE_PANELS[state.current_stage];
 }
 
@@ -151,7 +145,7 @@ export function getCurrentStagePanel(
 export function recordStageResult(
   state: DecisionPipelineState,
   stage: DecisionStage,
-  artefact: OpportunityBrief | ChallengeReport | PrototypeSpec | DeliveryPlan
+  artefact: OpportunityBrief | ChallengeReport | PrototypeSpec | DeliveryPlan,
 ): DecisionPipelineState {
   const updated = { ...state };
   updated.artefacts = { ...state.artefacts };
@@ -236,9 +230,10 @@ export function recordStageResult(
  * Advance to the next stage after a successful gate.
  */
 export function advanceToNextStage(
-  state: DecisionPipelineState
+  state: DecisionPipelineState,
 ): DecisionPipelineState {
-  const gateKey = `stage_${state.stage_index + 1}` as keyof typeof state.gate_results;
+  const gateKey =
+    `stage_${state.stage_index + 1}` as keyof typeof state.gate_results;
   const gate = state.gate_results[gateKey];
 
   if (!gate?.passed) {
@@ -301,19 +296,28 @@ export function formatAuditTrail(state: DecisionPipelineState): string {
  */
 export function checkKillCriteria(state: DecisionPipelineState): string | null {
   // Kill if ethical guardian fails at any stage
-  if (state.artefacts.challenge_report?.final_positions.ethical_boundary_guardian === "fail") {
+  if (
+    state.artefacts.challenge_report?.final_positions
+      .ethical_boundary_guardian === "fail"
+  ) {
     return "Ethical Boundary Guardian declared fail — opportunity killed";
   }
 
   // Kill if societal benefit <= 2
-  if (state.artefacts.opportunity_brief?.scores.societal_benefit.score !== undefined &&
-      state.artefacts.opportunity_brief.scores.societal_benefit.score <= 2) {
+  if (
+    state.artefacts.opportunity_brief?.scores.societal_benefit.score !==
+      undefined &&
+    state.artefacts.opportunity_brief.scores.societal_benefit.score <= 2
+  ) {
     return "Societal benefit score <= 2 — extractive solutions are not permitted";
   }
 
   // Kill if Persona-x fit <= 3
-  if (state.artefacts.opportunity_brief?.scores.persona_x_fit.score !== undefined &&
-      state.artefacts.opportunity_brief.scores.persona_x_fit.score <= 3) {
+  if (
+    state.artefacts.opportunity_brief?.scores.persona_x_fit.score !==
+      undefined &&
+    state.artefacts.opportunity_brief.scores.persona_x_fit.score <= 3
+  ) {
     return "Persona-x fit score <= 3 — problem does not need multi-perspective challenge";
   }
 
