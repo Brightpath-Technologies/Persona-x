@@ -3,7 +3,7 @@
  */
 
 /** Anthropic model used for all LLM calls */
-export const LLM_MODEL = "claude-sonnet-4-20250514";
+export const LLM_MODEL = "claude-sonnet-4-6";
 
 /** Tailwind classes for contribution-type role badges */
 export const ROLE_BADGE_COLORS: Record<string, string> = {
