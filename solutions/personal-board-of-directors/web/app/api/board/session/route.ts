@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runBoardSession } from "@/lib/session-stream";
+import { generateAdvocatePersona } from "@/lib/advocate-generator";
 import { checkApiKey } from "@/lib/api-error";
+import type { WebUserProfile } from "@/lib/types";
 
 export async function POST(request: NextRequest) {
   const keyError = checkApiKey();
   if (keyError) return keyError;
 
-  let body: { decision?: string };
+  let body: { decision?: string; userProfile?: WebUserProfile };
   try {
     body = await request.json();
   } catch {
@@ -31,7 +33,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const stream = runBoardSession(decision);
+  let advocatePersona;
+  if (body.userProfile) {
+    try {
+      advocatePersona = generateAdvocatePersona(body.userProfile, decision);
+    } catch (err) {
+      console.error("Failed to generate advocate persona:", err);
+    }
+  }
+
+  const stream = runBoardSession(decision, advocatePersona);
 
   return new Response(stream, {
     headers: {

@@ -90,6 +90,21 @@ body::before {
   animation: growBar 0.6s ease-out;
 }
 
+/* Form field input */
+.field-input {
+  @apply w-full rounded-[8px] border border-board-border bg-board-bg px-4 py-3 text-sm text-board-text placeholder:text-board-text-tertiary focus:border-board-accent/50 focus:outline-none focus:ring-1 focus:ring-board-accent/30;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
 /* Card hover utility */
 .card-hover {
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;

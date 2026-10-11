@@ -80,3 +80,56 @@ export interface ProbingQuestion {
   question: string;
   hint?: string;
 }
+
+/** Profile assessment types */
+
+export type ProfileStep = "about" | "goals" | "assessment" | "complete";
+
+export type SeniorityLevel = "early" | "mid" | "senior" | "executive" | "founder";
+
+export type TimeHorizon = "immediate" | "short_term" | "medium_term" | "long_term";
+
+export interface WebUserProfile {
+  name: string;
+  background: string;
+  seniorityLevel: SeniorityLevel;
+  experienceDomains: string[];
+  context: string;
+  primaryGoal: string;
+  successDefinition: string;
+  timeHorizon: TimeHorizon;
+  sacrificesAcceptable: string[];
+  nonNegotiables: string[];
+  dependencies: string[];
+  resourceLimits: string;
+  knownWeaknesses: string[];
+  blindSpots: string[];
+  patterns: string[];
+  rubric: {
+    risk_appetite: RubricScoreDisplay;
+    evidence_threshold: RubricScoreDisplay;
+    tolerance_for_ambiguity: RubricScoreDisplay;
+    intervention_frequency: RubricScoreDisplay;
+    escalation_bias: RubricScoreDisplay;
+    delivery_vs_rigour_bias: RubricScoreDisplay;
+  };
+  completedAt: string;
+}
+
+export interface ProfileQuestionOption {
+  label: string;
+  scores: Partial<Record<string, number>>;
+}
+
+export interface ProfileQuestion {
+  id: string;
+  category: string;
+  scenario: string;
+  context: string;
+  options: [ProfileQuestionOption, ProfileQuestionOption, ProfileQuestionOption, ProfileQuestionOption];
+}
+
+export interface ProfileQuestionResponse {
+  question_id: string;
+  selected_option: number;
+}

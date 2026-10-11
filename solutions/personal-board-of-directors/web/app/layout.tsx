@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Link from "next/link";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ProfileProvider } from "@/lib/profile-context";
 import { SettingsModal } from "@/components/settings-modal";
 import { EngineNav } from "@/components/engine/engine-nav";
 import "./globals.css";
@@ -30,6 +31,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-board-bg text-board-text font-sans antialiased">
         <ThemeProvider>
+          <ProfileProvider>
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[10000] focus:rounded-lg focus:bg-board-accent focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-board-accent-contrast"
@@ -73,6 +75,7 @@ export default function RootLayout({
               </nav>
             </div>
           </footer>
+          </ProfileProvider>
         </ThemeProvider>
       </body>
     </html>

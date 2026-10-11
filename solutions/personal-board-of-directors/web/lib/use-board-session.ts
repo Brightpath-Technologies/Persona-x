@@ -6,6 +6,7 @@ import type {
   BoardSessionEvent,
   PersonaResponse,
   SessionStatus,
+  WebUserProfile,
 } from "./types";
 
 export interface BoardSessionState {
@@ -50,7 +51,7 @@ export function useBoardSession() {
     });
   }
 
-  const startSession = useCallback(async (decision: string) => {
+  const startSession = useCallback(async (decision: string, userProfile?: WebUserProfile | null) => {
     // Abort any existing session
     abortRef.current?.abort();
     const abortController = new AbortController();
@@ -69,7 +70,7 @@ export function useBoardSession() {
       const res = await fetch("/api/board/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision }),
+        body: JSON.stringify({ decision, ...(userProfile ? { userProfile } : {}) }),
         signal: abortController.signal,
       });
 

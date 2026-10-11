@@ -11,6 +11,8 @@ import {
   type ReactNode,
 } from "react";
 import { useBoardSession } from "./use-board-session";
+import { useProfileContext } from "./profile-context";
+import { buildAdvocateProfile } from "./advocate-calibration";
 import type {
   BoardBrief,
   ChallengeExchange,
@@ -82,6 +84,9 @@ export function BoardProvider({ children }: { children: ReactNode }) {
   const [currentPersonaIndex, setCurrentPersonaIndex] = useState(0);
   const [profiles, setProfiles] = useState<PersonaProfile[]>([]);
 
+  // User profile (for advocate persona)
+  const { profile: userProfile } = useProfileContext();
+
   // Challenge state
   const [challengeStatus, setChallengeStatus] = useState<ChallengeStatus>("idle");
   const challengeAbortRef = useRef<AbortController | null>(null);
@@ -93,7 +98,13 @@ export function BoardProvider({ children }: { children: ReactNode }) {
   const [regeneratedBrief, setRegeneratedBrief] = useState<BoardBrief | null>(null);
 
   const session = useBoardSession();
-  const { status, responses, activePersonaId, brief: sessionBrief, error: sessionError, startSession, updateResponse } = session;
+  const { status, responses, activePersonaId, brief: sessionBrief, error: sessionError, startSession: rawStartSession, updateResponse } = session;
+
+  // Wrap startSession to automatically include user profile for advocate generation
+  const startSession = useCallback(
+    (decision: string) => rawStartSession(decision, userProfile),
+    [rawStartSession, userProfile]
+  );
 
   // Use regenerated brief if available, otherwise use session brief
   const brief = regeneratedBrief ?? sessionBrief;
@@ -103,13 +114,21 @@ export function BoardProvider({ children }: { children: ReactNode }) {
   // Track whether user has manually navigated
   const userNavigatedRef = useRef(false);
 
-  // Load persona profiles on mount
+  // Load persona profiles on mount, include advocate if user has a profile
   useEffect(() => {
     fetch("/api/board/personas")
       .then((res) => res.json())
-      .then((data) => setProfiles(data.personas ?? []))
+      .then((data) => {
+        const baseProfiles: PersonaProfile[] = data.personas ?? [];
+        if (userProfile) {
+          const advocateProfile = buildAdvocateProfile(userProfile);
+          setProfiles([...baseProfiles, advocateProfile]);
+        } else {
+          setProfiles(baseProfiles);
+        }
+      })
       .catch(console.error);
-  }, []);
+  }, [userProfile]);
 
   // Build enriched decision from original + probing Q&A
   const enrichedDecision = useMemo(

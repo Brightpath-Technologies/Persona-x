@@ -67,8 +67,12 @@ Keep your response focused and under 400 words.`;
 
 /**
  * Run a complete board session, returning a ReadableStream of SSE events.
+ * If an advocate persona is provided, it is appended after the static board personas.
  */
-export function runBoardSession(decision: string): ReadableStream<Uint8Array> {
+export function runBoardSession(
+  decision: string,
+  advocatePersona?: LoadedPersona
+): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
   let activeStream: { abort(): void } | null = null;
   let cancelled = false;
@@ -84,7 +88,10 @@ export function runBoardSession(decision: string): ReadableStream<Uint8Array> {
       try {
         const client = createClient();
         const personas = await loadBoardPersonas();
-        const ordered = determineSpeakingOrder(personas);
+        const allPersonas = advocatePersona
+          ? [...personas, advocatePersona]
+          : personas;
+        const ordered = determineSpeakingOrder(allPersonas);
 
         const session = createPanelSession({
           topic: decision,
