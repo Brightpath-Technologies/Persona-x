@@ -146,6 +146,32 @@ export {
 
 export type { PanelSession } from "./runtime/panel.js";
 
+export {
+  SessionRecordSchema,
+  SessionPersonaSchema,
+  SessionMessageSchema,
+  SessionRoundSchema,
+  RubricSnapshotSchema,
+  createSessionRecord,
+  sessionToYaml,
+  yamlToSession,
+  saveSessionToFile,
+  loadSessionFromFile,
+  replaySession,
+  compareSessions,
+} from "./runtime/session.js";
+
+export type {
+  SessionRecord,
+  SessionPersona,
+  SessionMessage,
+  SessionRound,
+  RubricSnapshot,
+  SessionComparison,
+  PersonaDifferences,
+  RubricShift,
+} from "./runtime/session.js";
+
 // LLM exports
 export {
   createClient,
@@ -213,7 +239,20 @@ export type {
   DecisionPipelineState,
   AuditEntry,
   StagePanel,
+  TranscriptMessage,
+  TranscriptRound,
 } from "./decision-engine/pipeline.js";
+
+export {
+  runStage,
+  runDecisionEngine,
+  DEFAULT_PERSONA_DIR,
+} from "./decision-engine/runner.js";
+
+export type {
+  RunnerOptions,
+  StageRunResult,
+} from "./decision-engine/runner.js";
 
 // Utility exports
 export {

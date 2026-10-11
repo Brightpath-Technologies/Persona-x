@@ -45,11 +45,24 @@ export interface DecisionPipelineState {
   audit_trail: AuditEntry[];
 }
 
+export interface TranscriptMessage {
+  persona_name: string;
+  content: string;
+  timestamp: string;
+}
+
+export interface TranscriptRound {
+  round_number: number;
+  messages: TranscriptMessage[];
+  summary: string;
+}
+
 export interface AuditEntry {
   stage: DecisionStage;
   timestamp: string;
   action: string;
   detail: string;
+  panel_transcript?: TranscriptRound[];
 }
 
 /**
@@ -147,11 +160,13 @@ export function getCurrentStagePanel(
 
 /**
  * Record a stage artefact and evaluate the gate.
+ * Optionally attach a panel transcript to the audit entry.
  */
 export function recordStageResult(
   state: DecisionPipelineState,
   stage: DecisionStage,
-  artefact: OpportunityBrief | ChallengeReport | PrototypeSpec | DeliveryPlan
+  artefact: OpportunityBrief | ChallengeReport | PrototypeSpec | DeliveryPlan,
+  transcript?: TranscriptRound[]
 ): DecisionPipelineState {
   const updated = { ...state };
   updated.artefacts = { ...state.artefacts };
@@ -171,6 +186,7 @@ export function recordStageResult(
         detail: gate.passed
           ? `Composite score: ${brief.scores.composite}. Proceeding to Challenge.`
           : `Gate failures: ${gate.failures.join("; ")}`,
+        ...(transcript ? { panel_transcript: transcript } : {}),
       });
       break;
     }
@@ -186,6 +202,7 @@ export function recordStageResult(
         detail: gate.passed
           ? "All challenges addressed. Proceeding to Prototype."
           : `Gate failures: ${gate.failures.join("; ")}`,
+        ...(transcript ? { panel_transcript: transcript } : {}),
       });
       break;
     }
@@ -202,6 +219,7 @@ export function recordStageResult(
         timestamp: new Date().toISOString(),
         action: "gate_passed",
         detail: "Prototype specification complete. Proceeding to Execute.",
+        ...(transcript ? { panel_transcript: transcript } : {}),
       });
       break;
     }
@@ -224,6 +242,7 @@ export function recordStageResult(
         timestamp: new Date().toISOString(),
         action: hasUnready ? "gate_failed" : "gate_passed",
         detail: `Go/No-Go recommendation: ${plan.go_no_go.recommendation}`,
+        ...(transcript ? { panel_transcript: transcript } : {}),
       });
       break;
     }

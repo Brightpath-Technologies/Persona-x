@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  @apply bg-ink-950 text-paper-100 antialiased;
+}
+
+a {
+  @apply transition-colors;
+}
+
+::selection {
+  background: rgba(26, 45, 82, 0.12);
+}
+
+/* Rendered edition / article markdown */
+.prose-news h1 {
+  @apply font-serif text-3xl font-light text-paper-50 mt-0 mb-3;
+}
+.prose-news h2 {
+  @apply font-serif text-xs uppercase tracking-widest text-navy mt-8 mb-3 pb-2 border-b border-line;
+}
+.prose-news h3 {
+  @apply font-serif text-xl font-normal text-paper-50 mt-5 mb-1;
+}
+.prose-news p {
+  @apply text-paper-200 my-2 leading-relaxed;
+}
+.prose-news em {
+  @apply text-grey not-italic text-xs uppercase tracking-wide;
+}
+.prose-news blockquote {
+  @apply border-l-2 border-navy pl-4 my-4 text-grey text-sm;
+}
+.prose-news a {
+  @apply text-navy hover:text-navy-soft underline-offset-2 hover:underline;
+}

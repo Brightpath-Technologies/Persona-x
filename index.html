@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Persona-x — Structured AI Personas | Brightpath Technologies</title>
+  <meta name="description" content="Persona-x turns implicit judgement into explicit, comparable, inspectable persona artefacts for AI-powered panel discussions.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1f9e0;</text></svg>">
+</head>
+<body>
+
+  <!-- ═══ Navigation ═══ -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="#" class="nav-brand">
+        <span class="brand-dot"></span>
+        Persona-x <span>by Brightpath</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#problem">Problem</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#rubric">Rubric</a></li>
+        <li><a href="#personas">Personas</a></li>
+        <li><a href="#decision-engine">Decision Engine</a></li>
+        <li><a href="#use-cases">Use Cases</a></li>
+      </ul>
+      <button class="nav-mobile-toggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══ Hero ═══ -->
+  <section class="hero">
+    <div class="container hero-content">
+      <h1>Turn implicit judgement into <span class="highlight">explicit, inspectable</span> persona artefacts</h1>
+      <p>Persona-x creates structured AI personas with quantified judgement profiles. Assemble panels where multiple perspectives challenge, validate, and improve every decision.</p>
+      <div class="hero-actions">
+        <a href="#how-it-works" class="btn btn-primary">See How It Works</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Problem ═══ -->
+  <section id="problem" class="problem">
+    <div class="container">
+      <div class="section-label">The Problem</div>
+      <h2 class="section-title">Single-perspective AI creates invisible risk</h2>
+      <p class="section-subtitle">When organisations use AI for decisions, three critical risks emerge from the lack of structured perspectives.</p>
+
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="card-icon">&#x1F441;</div>
+          <h3>Blind Spots Go Undetected</h3>
+          <p>A single AI perspective cannot systematically challenge itself. If no one asks about downside risk, it is never raised. Critical gaps go unnoticed until it is too late.</p>
+        </div>
+        <div class="problem-card">
+          <div class="card-icon">&#x1F50D;</div>
+          <h3>Judgement Is Invisible</h3>
+          <p>When an AI provides advice, the reasoning posture behind it &mdash; how cautious it was, what evidence it required, what it chose to ignore &mdash; is not stated or inspectable.</p>
+        </div>
+        <div class="problem-card">
+          <div class="card-icon">&#x1F3B2;</div>
+          <h3>Consistency Is Accidental</h3>
+          <p>Without a defined profile, the AI&rsquo;s behaviour shifts based on phrasing, context, and prompt design. Different users get different levels of rigour from the same system.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ How It Works ═══ -->
+  <section id="how-it-works" class="how-it-works">
+    <div class="container">
+      <div class="section-label">How It Works</div>
+      <h2 class="section-title">Three stages: Create, Store, Run</h2>
+      <p class="section-subtitle">From guided creation to multi-perspective panel discussions, the process takes minutes &mdash; not hours.</p>
+
+      <div class="stages">
+        <div class="stage">
+          <div class="stage-number">1</div>
+          <h3>Create</h3>
+          <p>A guided engine extracts judgement signals through focused questions &mdash; decisions, comparisons, and spectrum choices. The system builds a complete persona file with a six-dimension rubric.</p>
+          <ul class="stage-features">
+            <li>Minimal, high-leverage questions</li>
+            <li>Conservative inference from signals</li>
+            <li>Schema-validated output</li>
+            <li>Fixed population order</li>
+          </ul>
+        </div>
+        <div class="stage">
+          <div class="stage-number">2</div>
+          <h3>Store</h3>
+          <p>Each persona becomes a structured YAML file that is human-readable, machine-validatable, version-controlled, and comparable across the entire persona library.</p>
+          <ul class="stage-features">
+            <li>Semantic versioning</li>
+            <li>Full change history</li>
+            <li>Zod schema validation</li>
+            <li>Rubric coherence checks</li>
+          </ul>
+        </div>
+        <div class="stage">
+          <div class="stage-number">3</div>
+          <h3>Run</h3>
+          <p>Multiple personas are loaded into a panel session. The runtime selects who speaks, orders contributions by intervention frequency, and translates rubric scores into AI behavioural rules.</p>
+          <ul class="stage-features">
+            <li>Topic-based persona selection</li>
+            <li>Rubric-driven speaking order</li>
+            <li>System prompt generation</li>
+            <li>Boundary enforcement</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Rubric ═══ -->
+  <section id="rubric" class="rubric">
+    <div class="container">
+      <div class="section-label">The Rubric</div>
+
+      <div class="rubric-layout">
+        <div class="rubric-info">
+          <h2 class="section-title">Six dimensions that define how a persona thinks</h2>
+          <p>At the core of every persona is a fixed six-dimension rubric scored 1&ndash;10. These dimensions are the same across all personas, making them directly comparable.</p>
+          <p>Every score has a mandatory interpretive note explaining how it manifests in behaviour &mdash; not why it is &ldquo;good&rdquo; or &ldquo;bad&rdquo;.</p>
+
+          <div class="rubric-key" style="margin-top: 2rem;">
+            <div class="rubric-key-item">
+              <span class="key-score">1&ndash;3</span>
+              <span class="key-label">Low end &mdash; cautious, evidence-demanding, clarity-seeking, rigour-first</span>
+            </div>
+            <div class="rubric-key-item">
+              <span class="key-score">4&ndash;6</span>
+              <span class="key-label">Midpoint &mdash; balanced, contextual, adaptive</span>
+            </div>
+            <div class="rubric-key-item">
+              <span class="key-score">7&ndash;10</span>
+              <span class="key-label">High end &mdash; bold, signal-trusting, ambiguity-tolerant, delivery-first</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="rubric-visualiser">
+          <div class="rubric-persona-name">Risk-Aware Analyst</div>
+          <div class="rubric-persona-role">Challenger &mdash; surfaces risks and demands evidence</div>
+
+          <div class="rubric-bar-group">
+            <div class="rubric-bar-header">
+              <span class="rubric-bar-label">Risk Appetite</span>
+              <span class="rubric-bar-score">3/10</span>
+            </div>
+            <div class="rubric-bar-track">
+              <div class="rubric-bar-fill bar-low" data-score="3"></div>
+            </div>
+            <div class="rubric-bar-note">Conservative. Requires clear downside mitigation before supporting a decision.</div>
+          </div>
+
+          <div class="rubric-bar-group">
+            <div class="rubric-bar-header">
+              <span class="rubric-bar-label">Evidence Threshold</span>
+              <span class="rubric-bar-score">8/10</span>
+            </div>
+            <div class="rubric-bar-track">
+              <div class="rubric-bar-fill bar-high" data-score="8"></div>
+            </div>
+            <div class="rubric-bar-note">High. Expects documented evidence, not just experienced judgement.</div>
+          </div>
+
+          <div class="rubric-bar-group">
+            <div class="rubric-bar-header">
+              <span class="rubric-bar-label">Tolerance for Ambiguity</span>
+              <span class="rubric-bar-score">4/10</span>
+            </div>
+            <div class="rubric-bar-track">
+              <div class="rubric-bar-fill bar-mid" data-score="4"></div>
+            </div>
+            <div class="rubric-bar-note">Uncomfortable with ambiguity but can operate if risks are acknowledged.</div>
+          </div>
+
+          <div class="rubric-bar-group">
+            <div class="rubric-bar-header">
+              <span class="rubric-bar-label">Intervention Frequency</span>
+              <span class="rubric-bar-score">7/10</span>
+            </div>
+            <div class="rubric-bar-track">
+              <div class="rubric-bar-fill bar-high" data-score="7"></div>
+            </div>
+            <div class="rubric-bar-note">Intervenes regularly. Picks moments where challenge has the most impact.</div>
+          </div>
+
+          <div class="rubric-bar-group">
+            <div class="rubric-bar-header">
+              <span class="rubric-bar-label">Escalation Bias</span>
+              <span class="rubric-bar-score">6/10</span>
+            </div>
+            <div class="rubric-bar-track">
+              <div class="rubric-bar-fill bar-mid" data-score="6"></div>
+            </div>
+            <div class="rubric-bar-note">Moderate. Handles routine concerns locally, escalates on material risk.</div>
+          </div>
+
+          <div class="rubric-bar-group">
+            <div class="rubric-bar-header">
+              <span class="rubric-bar-label">Delivery vs Rigour</span>
+              <span class="rubric-bar-score">3/10</span>
+            </div>
+            <div class="rubric-bar-track">
+              <div class="rubric-bar-fill bar-low" data-score="3"></div>
+            </div>
+            <div class="rubric-bar-note">Strongly favours rigour. Would rather delay than approve insufficiently tested work.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Persona Explorer ═══ -->
+  <section id="personas" class="personas">
+    <div class="container">
+      <div class="section-label">Persona Explorer</div>
+      <h2 class="section-title">Inspect how personas are structured</h2>
+      <p class="section-subtitle">Every persona is a governed design artefact &mdash; not a character. Explore the sections that define judgement, reasoning, and boundaries.</p>
+
+      <div class="persona-tabs">
+        <button class="persona-tab active" data-persona="risk-analyst">Risk-Aware Analyst</button>
+        <button class="persona-tab" data-persona="opp-architect">Opportunity Architect</button>
+        <button class="persona-tab" data-persona="ethical-guardian">Ethical Boundary Guardian</button>
+        <button class="persona-tab" data-persona="sceptical-investor">Sceptical Investor</button>
+      </div>
+
+      <!-- Risk-Aware Analyst -->
+      <div id="persona-risk-analyst" class="persona-detail active">
+        <div class="persona-header">
+          <div class="persona-title-group">
+            <h3>Risk-Aware Analyst</h3>
+            <div class="persona-meta">
+              <span class="persona-badge">Challenger</span>
+              <span class="persona-badge">v1.0.0</span>
+              <span class="persona-badge">Designed</span>
+            </div>
+          </div>
+        </div>
+        <div class="persona-body">
+          <div class="persona-section">
+            <h4>Purpose</h4>
+            <p>A cautious, evidence-focused persona designed to surface risks, question assumptions, and ensure that proposals are supported by adequate evidence before proceeding.</p>
+          </div>
+          <div class="persona-section">
+            <h4>Panel Role</h4>
+            <p>Ensures proposals are stress-tested against downside scenarios before the group commits. Slows premature convergence when evidence is thin.</p>
+          </div>
+          <div class="persona-section">
+            <h4>Reasoning Tendencies</h4>
+            <ul>
+              <li>Proposals are incomplete until proven otherwise</li>
+              <li>Optimistic projections should be discounted by default</li>
+              <li>If a risk hasn&rsquo;t been explicitly addressed, it hasn&rsquo;t been considered</li>
+            </ul>
+          </div>
+          <div class="persona-section">
+            <h4>Boundaries</h4>
+            <ul>
+              <li>Will not engage: commercial strategy, tech architecture, HR topics</li>
+              <li>Will not claim: that a risk assessment is complete or final</li>
+              <li>Defers by design: legal interpretation, commercial viability, technical feasibility</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Opportunity Architect -->
+      <div id="persona-opp-architect" class="persona-detail">
+        <div class="persona-header">
+          <div class="persona-title-group">
+            <h3>Opportunity Architect</h3>
+            <div class="persona-meta">
+              <span class="persona-badge">Specialist</span>
+              <span class="persona-badge">v1.0.0</span>
+              <span class="persona-badge">Decision Engine</span>
+            </div>
+          </div>
+        </div>
+        <div class="persona-body">
+          <div class="persona-section">
+            <h4>Purpose</h4>
+            <p>Structures raw opportunity ideas into evaluable proposals. Identifies the core problem, proposes the solution shape, and maps the value chain from problem to paying customer.</p>
+          </div>
+          <div class="persona-section">
+            <h4>Panel Role</h4>
+            <p>Transforms ambiguous opportunity descriptions into structured briefs with clear problem statements, solution definitions, and buyer identification.</p>
+          </div>
+          <div class="persona-section">
+            <h4>Reasoning Tendencies</h4>
+            <ul>
+              <li>Every opportunity can be structured if the problem is real</li>
+              <li>The quality of evaluation depends on the quality of framing</li>
+              <li>If you cannot identify a paying buyer, the opportunity is not ready</li>
+            </ul>
+          </div>
+          <div class="persona-section">
+            <h4>Boundaries</h4>
+            <ul>
+              <li>Will not engage: market sizing, ethical assessment, technical feasibility</li>
+              <li>Will not claim: that a well-structured brief guarantees a good opportunity</li>
+              <li>Defers by design: revenue analysis, impact evaluation, build complexity</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ethical Boundary Guardian -->
+      <div id="persona-ethical-guardian" class="persona-detail">
+        <div class="persona-header">
+          <div class="persona-title-group">
+            <h3>Ethical Boundary Guardian</h3>
+            <div class="persona-meta">
+              <span class="persona-badge">Challenger</span>
+              <span class="persona-badge">v1.0.0</span>
+              <span class="persona-badge">Kill Authority</span>
+            </div>
+          </div>
+        </div>
+        <div class="persona-body">
+          <div class="persona-section">
+            <h4>Purpose</h4>
+            <p>Evaluates opportunities for ethical risks, harm vectors, and societal impact. Has non-negotiable kill authority when an opportunity creates unacceptable harm potential.</p>
+          </div>
+          <div class="persona-section">
+            <h4>Panel Role</h4>
+            <p>Identifies harm vectors, affected populations, and required safeguards. Has authority to kill opportunities that present unacceptable ethical risk.</p>
+          </div>
+          <div class="persona-section">
+            <h4>Reasoning Tendencies</h4>
+            <ul>
+              <li>If harm is possible, it will eventually occur without explicit safeguards</li>
+              <li>Vulnerable populations are disproportionately affected by poorly designed systems</li>
+              <li>Good intentions do not prevent bad outcomes</li>
+            </ul>
+          </div>
+          <div class="persona-section">
+            <h4>Boundaries</h4>
+            <ul>
+              <li>Will not engage: financial optimisation, technical architecture</li>
+              <li>Will not claim: that ethical clearance guarantees a good product</li>
+              <li>Defers by design: financial viability, historical precedent, customer experience</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sceptical Investor -->
+      <div id="persona-sceptical-investor" class="persona-detail">
+        <div class="persona-header">
+          <div class="persona-title-group">
+            <h3>Sceptical Investor</h3>
+            <div class="persona-meta">
+              <span class="persona-badge">Challenger</span>
+              <span class="persona-badge">v1.0.0</span>
+              <span class="persona-badge">Decision Engine</span>
+            </div>
+          </div>
+        </div>
+        <div class="persona-body">
+          <div class="persona-section">
+            <h4>Purpose</h4>
+            <p>Challenges the financial viability and commercial logic of proposed opportunities. Asks the questions a shrewd investor would ask before committing capital.</p>
+          </div>
+          <div class="persona-section">
+            <h4>Panel Role</h4>
+            <p>Exposes financial assumptions that do not hold, identifies unsustainable unit economics, and forces honest assessment of willingness-to-pay.</p>
+          </div>
+          <div class="persona-section">
+            <h4>Reasoning Tendencies</h4>
+            <ul>
+              <li>Revenue projections are overestimated until proven otherwise</li>
+              <li>Costs are underestimated by default</li>
+              <li>Customer acquisition is harder and more expensive than proposed</li>
+            </ul>
+          </div>
+          <div class="persona-section">
+            <h4>Boundaries</h4>
+            <ul>
+              <li>Will not engage: ethical assessment, user experience, technical architecture</li>
+              <li>Will not claim: that financial viability guarantees market success</li>
+              <li>Defers by design: ethics to Guardian, history to Archaeologist, customers to Advocate</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Decision Engine ═══ -->
+  <section id="decision-engine" class="decision-engine">
+    <div class="container">
+      <div class="section-label">Decision Engine</div>
+      <h2 class="section-title">Four-stage pipeline for opportunity evaluation</h2>
+      <p class="section-subtitle">Every build decision passes through Propose, Challenge, Prototype, and Execute &mdash; each with its own panel and quantified gate.</p>
+
+      <div class="pipeline-visual">
+        <div class="pipeline-stage active" data-stage="propose">
+          <div class="stage-name">Propose</div>
+          <div class="stage-desc">Structure &amp; score</div>
+        </div>
+        <div class="pipeline-stage" data-stage="challenge">
+          <div class="stage-name">Challenge</div>
+          <div class="stage-desc">Stress-test</div>
+        </div>
+        <div class="pipeline-stage" data-stage="prototype">
+          <div class="stage-name">Prototype</div>
+          <div class="stage-desc">Specify &amp; design</div>
+        </div>
+        <div class="pipeline-stage" data-stage="execute">
+          <div class="stage-name">Execute</div>
+          <div class="stage-desc">Go / No-Go</div>
+        </div>
+      </div>
+
+      <div class="pipeline-detail">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Use Cases ═══ -->
+  <section id="use-cases" class="use-cases">
+    <div class="container">
+      <div class="section-label">Use Cases</div>
+      <h2 class="section-title">Where structured personas create value</h2>
+      <p class="section-subtitle">From governance and risk to personal decision-making, Persona-x serves any context where multiple perspectives improve outcomes.</p>
+
+      <div class="use-case-grid">
+        <div class="use-case-card">
+          <div class="use-case-category">Governance &amp; Risk</div>
+          <h3>Board Decision Review</h3>
+          <p>Assemble a panel of risk, compliance, and commercial personas to stress-test board-level proposals before they reach the boardroom.</p>
+          <div class="use-case-score">Persona-x Fit: 10/10</div>
+        </div>
+        <div class="use-case-card">
+          <div class="use-case-category">Enterprise</div>
+          <h3>AI System Review Panel</h3>
+          <p>Evaluate AI system deployments with personas covering safety, bias, performance, and governance dimensions.</p>
+          <div class="use-case-score">Persona-x Fit: 10/10</div>
+        </div>
+        <div class="use-case-card">
+          <div class="use-case-category">Legal &amp; Strategy</div>
+          <h3>Legal Case Strategy</h3>
+          <p>Test case strategies against personas representing opposing counsel, judicial reasoning, and client risk tolerance.</p>
+          <div class="use-case-score">Persona-x Fit: 10/10</div>
+        </div>
+        <div class="use-case-card">
+          <div class="use-case-category">Small Business</div>
+          <h3>Hiring Decision Panel</h3>
+          <p>Use structured personas to evaluate candidates from cultural fit, technical depth, and team dynamics perspectives.</p>
+          <div class="use-case-score">Persona-x Fit: 8/10</div>
+        </div>
+        <div class="use-case-card">
+          <div class="use-case-category">Healthcare</div>
+          <h3>Clinical Decision Support</h3>
+          <p>Multi-perspective review of treatment options with personas covering clinical evidence, patient preferences, and resource constraints.</p>
+          <div class="use-case-score">Persona-x Fit: 10/10</div>
+        </div>
+        <div class="use-case-card">
+          <div class="use-case-category">Personal</div>
+          <h3>Career Transition Adviser</h3>
+          <p>Evaluate career moves with personas representing financial prudence, personal fulfilment, and market reality.</p>
+          <div class="use-case-score">Persona-x Fit: 7/10</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ Footer ═══ -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">Persona-x <span>by Brightpath Technologies</span></div>
+      <nav class="footer-nav" aria-label="Legal">
+        <a href="https://advisors.brightpathtechnology.io/contact">Contact</a>
+        <a href="https://advisors.brightpathtechnology.io/privacy">Privacy Policy</a>
+        <a href="https://advisors.brightpathtechnology.io/terms">Terms of Use</a>
+      </nav>
+      <div class="footer-copy">&copy; 2026 BrightPath Technologies. Toronto, Ontario, Canada.</div>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
